@@ -9,7 +9,7 @@ export default function ListingCard({ item }) {
         <Text style={styles.price}>{item.price}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.meta}>{item.location}</Text>
-          <Text style={styles.meta}>{item.category}</Text>
+          <Text style={styles.meta}>{item.category_display}</Text>
         </View>
       </TouchableOpacity>
     </Link>

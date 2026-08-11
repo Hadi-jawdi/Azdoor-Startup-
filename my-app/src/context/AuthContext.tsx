@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
       const savedToken = await SecureStore.getItemAsync("token");
       if (savedToken) {
         try {
-          const me = await apiRequest("/me/", { token: savedToken });
+          const me = await apiRequest("/auth/me/", { token: savedToken });
           setToken(savedToken);
           setUser(me);
         } catch {
@@ -26,14 +26,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (phone, password) => {
-    const data = await apiRequest("/login/", { method: "POST", body: { phone, password } });
+    const data = await apiRequest("/auth/login/", { method: "POST", body: { phone, password } });
     await SecureStore.setItemAsync("token", data.token);
     setToken(data.token);
     setUser(data.user);
   };
 
   const register = async (phone, fullName, password) => {
-    const data = await apiRequest("/register/", {
+    const data = await apiRequest("/auth/register/", {
       method: "POST",
       body: { phone, full_name: fullName, password },
     });
@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await apiRequest("/logout/", { method: "POST", token });
+      await apiRequest("/auth/logout/", { method: "POST", token });
     } catch {}
     await SecureStore.deleteItemAsync("token");
     setToken(null);
