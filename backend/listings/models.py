@@ -25,3 +25,10 @@ class Listing(models.Model):
 
     def __str__(self):
         return self.title
+
+
+#for uploading images of the ads 
+class ListingImage(models.Model):
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="listings/")
+    created_at = models.DateTimeField(auto_now_add=True)
