@@ -24,6 +24,16 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="grid" color={color} size={size} />,
         }}
       />
+<Tabs.Screen
+  name="favorites"
+  options={{
+    title: "علاقه‌مندی‌ها",
+    tabBarIcon: ({ color, focused }) => (
+      <Ionicons name={focused ? "heart" : "heart-outline"} color={color} size={21} />
+    ),
+  }}
+/>
+
       <Tabs.Screen
         name="post"
         options={{

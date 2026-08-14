@@ -1,28 +1,22 @@
-// import { apiRequest } from "./api";
+
+import { apiRequest } from "./api";
+
+const BASE_URL = "http://localhost:8000/api";
 
 // export function getListings(categoryId) {
 //   const query = categoryId ? `?category=${categoryId}` : "";
 //   return apiRequest(`/listings/${query}`);
 // }
 
-// export function getListing(id) {
-//   return apiRequest(`/listings/${id}/`);
-// }
-
-// export function createListing(data, token) {
-//   return apiRequest("/listings/", { method: "POST", body: data, token });
-// }
-import { apiRequest } from "./api";
-
-const BASE_URL = "http://localhost:8000/api";
-
-export function getListings(categoryId) {
-  const query = categoryId ? `?category=${categoryId}` : "";
-  return apiRequest(`/listings/${query}`);
-}
-
 export function getListing(id) {
   return apiRequest(`/listings/${id}/`);
+}
+export function getListings({ categoryId, search } = {}) {
+  const params = new URLSearchParams();
+  if (categoryId) params.append("category", categoryId);
+  if (search) params.append("search", search);
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return apiRequest(`/listings/${query}`);
 }
 
 export async function createListing({ title, price, location, description, category, images }, token) {
@@ -59,4 +53,12 @@ export async function createListing({ title, price, location, description, categ
     throw new Error(Array.isArray(message) ? message[0] : message);
   }
   return data;
+}
+
+export function toggleFavorite(id, token) {
+  return apiRequest(`/listings/${id}/favorite/`, { method: "POST", token });
+}
+
+export function getFavorites(token) {
+  return apiRequest(`/listings/favorites/`, { token });
 }
