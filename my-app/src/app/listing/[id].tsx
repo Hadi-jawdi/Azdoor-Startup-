@@ -9,11 +9,14 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
+  Linking,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { getListing } from "../../utils/listings";
+import { useAuth } from "../../context/AuthContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85;
@@ -21,10 +24,25 @@ const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85;
 export default function ListingDetail() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const handleCall = () => {
+    if (!item?.owner_phone) return;
+    Linking.openURL(`tel:${item.owner_phone}`).catch(() =>
+      Alert.alert("خطا", "امکان برقراری تماس وجود ندارد.")
+    );
+  };
+
+  const handleMessage = () => {
+    if (!item?.owner_phone) return;
+    Linking.openURL(`sms:${item.owner_phone}`).catch(() =>
+      Alert.alert("خطا", "امکان ارسال پیام وجود ندارد.")
+    );
+  };
 
   useEffect(() => {
     getListing(id as string)
@@ -55,90 +73,104 @@ export default function ListingDetail() {
   const images = item.images?.length ? item.images : [];
 
   return (
-    <View style={styles.container}>
-      {/* Image carousel or placeholder */}
-      <View style={{ height: IMAGE_HEIGHT }}>
-        {images.length > 0 ? (
-          <FlatList
-            data={images}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(img) => String(img.id)}
-            onMomentumScrollEnd={(e) => {
-              const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-              setActiveIndex(idx);
-            }}
-            renderItem={({ item: img }) => (
-              <Image
-                source={{ uri: img.image }}
-                style={{ width: SCREEN_WIDTH, height: IMAGE_HEIGHT }}
-                resizeMode="cover"
-              />
-            )}
-          />
-        ) : (
-          <View style={[styles.imagePlaceholder, { height: IMAGE_HEIGHT }]}>
-            <Ionicons name="image-outline" size={48} color="#c7cad1" />
-          </View>
-        )}
+    <View style={{ flex: 1 }}>
+      <View style={styles.container}>
+        {/* Image carousel or placeholder */}
+        <View style={{ height: IMAGE_HEIGHT }}>
+          {images.length > 0 ? (
+            <FlatList
+              data={images}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(img) => String(img.id)}
+              onMomentumScrollEnd={(e) => {
+                const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                setActiveIndex(idx);
+              }}
+              renderItem={({ item: img }) => (
+                <Image
+                  source={{ uri: img.image }}
+                  style={{ width: SCREEN_WIDTH, height: IMAGE_HEIGHT }}
+                  resizeMode="cover"
+                />
+              )}
+            />
+          ) : (
+            <View style={[styles.imagePlaceholder, { height: IMAGE_HEIGHT }]}>
+              <Ionicons name="image-outline" size={48} color="#c7cad1" />
+            </View>
+          )}
 
-        {/* Floating header controls */}
-        <View style={[styles.floatingHeader, { top: insets.top + 8 }]}>
-          <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-forward" size={20} color="#1a1a1a" />
+          {/* Floating header controls */}
+          <View style={[styles.floatingHeader, { top: insets.top + 8 }]}>
+            <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-forward" size={20} color="#1a1a1a" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Dot pagination */}
+          {images.length > 1 && (
+            <View style={styles.dotsRow}>
+              {images.map((_, i) => (
+                <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Content sheet, overlapping the image slightly */}
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{item.title}</Text>
+          </View>
+          <Text style={styles.price}>{item.price}</Text>
+
+          <View style={styles.pillRow}>
+            <View style={styles.pill}>
+              <Ionicons name="location-outline" size={14} color="#5f6570" />
+              <Text style={styles.pillText}>{item.location}</Text>
+            </View>
+            <View style={styles.pill}>
+              <Ionicons name="pricetag-outline" size={14} color="#5f6570" />
+              <Text style={styles.pillText}>{item.category_display}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <Text style={styles.sectionLabel}>توضیحات</Text>
+          <Text style={styles.description}>
+            {item.description || "توضیحاتی برای این اعلان ثبت نشده است."}
+          </Text>
+
+          {item.owner_name ? (
+            <View style={styles.ownerRow}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{item.owner_name.charAt(0)}</Text>
+              </View>
+              <View>
+                <Text style={styles.ownerLabel}>ثبت شده توسط</Text>
+                <Text style={styles.ownerName}>{item.owner_name}</Text>
+              </View>
+            </View>
+          ) : null}
+        </View>
+      </View>
+{item.owner_phone && user?.phone !== item.owner_phone && (
+  <View style={[styles.contactBar, { paddingBottom: Math.max(insets.bottom, 14) + 8 }]}>
+          <TouchableOpacity style={styles.messageButton} onPress={handleMessage}>
+            <Ionicons name="chatbubble-outline" size={18} color="#00a884" />
+            <Text style={styles.messageButtonText}>پیام</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.callButton} onPress={handleCall}>
+            <Ionicons name="call" size={18} color="#fff" />
+            <Text style={styles.callButtonText}>تماس با فروشنده</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Dot pagination */}
-        {images.length > 1 && (
-          <View style={styles.dotsRow}>
-            {images.map((_, i) => (
-              <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
-            ))}
-          </View>
-        )}
-      </View>
-
-      {/* Content sheet, overlapping the image slightly */}
-      <View style={styles.sheet}>
-        <View style={styles.sheetHandle} />
-
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{item.title}</Text>
-        </View>
-        <Text style={styles.price}>{item.price}</Text>
-
-        <View style={styles.pillRow}>
-          <View style={styles.pill}>
-            <Ionicons name="location-outline" size={14} color="#5f6570" />
-            <Text style={styles.pillText}>{item.location}</Text>
-          </View>
-          <View style={styles.pill}>
-            <Ionicons name="pricetag-outline" size={14} color="#5f6570" />
-            <Text style={styles.pillText}>{item.category_display}</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        <Text style={styles.sectionLabel}>توضیحات</Text>
-        <Text style={styles.description}>
-          {item.description || "توضیحاتی برای این اعلان ثبت نشده است."}
-        </Text>
-
-        {item.owner_name ? (
-          <View style={styles.ownerRow}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{item.owner_name.charAt(0)}</Text>
-            </View>
-            <View>
-              <Text style={styles.ownerLabel}>ثبت شده توسط</Text>
-              <Text style={styles.ownerName}>{item.owner_name}</Text>
-            </View>
-          </View>
-        ) : null}
-      </View>
+      )}
     </View>
   );
 }
@@ -197,6 +229,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 12,
+    paddingBottom: 100,
   },
   sheetHandle: {
     width: 36,
@@ -248,4 +281,45 @@ const styles = StyleSheet.create({
   avatarText: { color: "#0f6e56", fontWeight: "700", fontSize: 16 },
   ownerLabel: { fontSize: 11.5, color: "#9a9ea6" },
   ownerName: { fontSize: 14, fontWeight: "600", color: "#1a1a1a" },
+
+  contactBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    gap: 10,
+    backgroundColor: "#fff",
+    padding: 14,
+    borderTopWidth: 1,
+    borderTopColor: "#eef0f2",
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -3 },
+  },
+  messageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: "#00a884",
+    borderRadius: 12,
+    paddingVertical: 13,
+    width: 90,
+  },
+  messageButtonText: { color: "#00a884", fontWeight: "700", fontSize: 13.5 },
+  callButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#00a884",
+    borderRadius: 12,
+    paddingVertical: 13,
+  },
+  callButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });
