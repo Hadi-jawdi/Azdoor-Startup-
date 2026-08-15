@@ -13,7 +13,7 @@ export default function RootLayout() {
         {/* <Stack.Screen name="listing/[id]" options={{ title: "جزئیات اعلان" }} /> */}
         <Stack.Screen name="listing/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="conversations" options={{ headerShown: false }} />
-<Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
       </Stack>
     </AuthProvider>
   );

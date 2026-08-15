@@ -25,9 +25,8 @@ const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85;
 export default function ListingDetail() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  // const { user } = useAuth();
   const { user, token } = useAuth();
-  const [item, setItem] = useState<any>(null);
+  const [item, setItem] = useState<any>(null);  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -39,20 +38,25 @@ export default function ListingDetail() {
     );
   };
 
-  const handleMessage = () => {
-    // if (!item?.owner_phone) return;
-    // Linking.openURL(`sms:${item.owner_phone}`).catch(() =>
-    //   Alert.alert("خطا", "امکان ارسال پیام وجود ندارد.")
-    // );
-     if (!user) {
+  // const handleMessage = () => {
+  //   if (!item?.owner_phone) return;
+  //   Linking.openURL(`sms:${item.owner_phone}`).catch(() =>
+  //     Alert.alert("خطا", "امکان ارسال پیام وجود ندارد.")
+  //   );
+  // };
+
+ const handleMessage = async () => {
+   if (!user) {
      router.push("/profile");
      return;
    }
-   startConversation(item.id, token)
-     .then((conversation) => router.push(`/chat/${conversation.id}`))
-     .catch((err) => Alert.alert("خطا", err.message));
-
-  };
+   try {
+     const conversation = await startConversation(item.id, token);
+     router.push(`/chat/${conversation.id}`);
+   } catch (err: any) {
+     Alert.alert("خطا", err.message);
+   }
+ };
 
   useEffect(() => {
     getListing(id as string)
