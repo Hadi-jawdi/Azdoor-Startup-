@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "accounts",
     "listings",
+    "chats",
 
 
 ]

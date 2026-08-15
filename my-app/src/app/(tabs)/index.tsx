@@ -97,10 +97,14 @@ export default function Home() {
           </View>
 
           <View style={styles.brandRight}>
-            <TouchableOpacity style={styles.iconButton}>
+            {/* <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="notifications-outline" size={19} color="#fff" />
               <View style={styles.notifDot} />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+<TouchableOpacity style={styles.iconButton} onPress={() => router.push("/conversations")}>
+   <Ionicons name="chatbubbles-outline" size={19} color="#fff" />
+ </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.iconButton}
               onPress={() => router.push("/profile")}
