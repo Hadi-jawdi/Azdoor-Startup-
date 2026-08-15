@@ -1,5 +1,4 @@
 
-
 import { useCallback, useRef, useState } from "react";
 import {
   View,
@@ -11,7 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { useFocusEffect, router } from "expo-router";
+import { useFocusEffect, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { getListings } from "../../utils/listings";
@@ -19,10 +18,11 @@ import ListingCard from "../../components/ListingCard";
 import { categories } from "../../data/categories";
 import { useAuth } from "../../context/AuthContext";
 
-const APP_NAME ="ازدور"; // TODO: replace with your real app/brand name
+const APP_NAME = "ازدور"; // TODO: replace with your real app/brand name
 
 export default function Home() {
   const { user } = useAuth();
+  const params = useLocalSearchParams<{ categoryId?: string }>();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,8 +46,14 @@ export default function Home() {
 
   useFocusEffect(
     useCallback(() => {
-      load().finally(() => setLoading(false));
-    }, [])
+      const incoming = params.categoryId ?? null;
+      if (incoming !== activeCategory) {
+        setActiveCategory(incoming);
+        load({ categoryId: incoming }).finally(() => setLoading(false));
+      } else {
+        load().finally(() => setLoading(false));
+      }
+    }, [params.categoryId])
   );
 
   const onChangeSearch = (text: string) => {

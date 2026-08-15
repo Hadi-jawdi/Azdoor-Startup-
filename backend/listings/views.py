@@ -1,8 +1,11 @@
 
 # from django.db.models import Q
+# from django.shortcuts import get_object_or_404
 # from rest_framework import generics, permissions
 # from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-# from .models import Listing
+# from rest_framework.views import APIView
+# from rest_framework.response import Response
+# from .models import Listing, Favorite
 # from .serializers import ListingSerializer
 
 
@@ -35,6 +38,26 @@
 #     serializer_class = ListingSerializer
 #     permission_classes = [permissions.AllowAny]
 
+
+# class ToggleFavoriteView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def post(self, request, pk):
+#         listing = get_object_or_404(Listing, pk=pk)
+#         favorite, created = Favorite.objects.get_or_create(user=request.user, listing=listing)
+#         if not created:
+#             favorite.delete()
+#             return Response({"favorited": False})
+#         return Response({"favorited": True})
+
+
+# class FavoriteListView(generics.ListAPIView):
+#     serializer_class = ListingSerializer
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def get_queryset(self):
+#         return Listing.objects.filter(favorited_by__user=self.request.user).order_by("-favorited_by__created_at")
+
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions
@@ -43,6 +66,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Listing, Favorite
 from .serializers import ListingSerializer
+from .permissions import IsOwnerOrReadOnly
 
 
 class ListingListCreateView(generics.ListCreateAPIView):
@@ -69,10 +93,23 @@ class ListingListCreateView(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class ListingDetailView(generics.RetrieveAPIView):
+class ListingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Listing.objects.all()
     serializer_class = ListingSerializer
-    permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated(), IsOwnerOrReadOnly()]
+
+
+class MyListingsView(generics.ListAPIView):
+    serializer_class = ListingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Listing.objects.filter(owner=self.request.user)
 
 
 class ToggleFavoriteView(APIView):
