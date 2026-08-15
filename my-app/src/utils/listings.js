@@ -62,3 +62,14 @@ export function toggleFavorite(id, token) {
 export function getFavorites(token) {
   return apiRequest(`/listings/favorites/`, { token });
 }
+export function getMyListings(token) {
+  return apiRequest(`/listings/mine/`, { token });
+}
+
+export function updateListing(id, data, token) {
+  return apiRequest(`/listings/${id}/`, { method: "PATCH", body: data, token });
+}
+
+export function deleteListing(id, token) {
+  return apiRequest(`/listings/${id}/`, { method: "DELETE", token });
+}

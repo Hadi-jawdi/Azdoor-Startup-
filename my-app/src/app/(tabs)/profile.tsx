@@ -34,6 +34,11 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
+// import { useState } from "react";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+
+
 export default function Profile() {
   const { user, loading, login, register, logout } = useAuth();
   const [mode, setMode] = useState("login"); // "login" | "register"
@@ -44,17 +49,35 @@ export default function Profile() {
 
   if (loading) return null;
 
+  // if (user) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <Text style={styles.title}>سلام، {user.full_name || user.phone}</Text>
+  //       <Text style={styles.subtitle}>{user.phone}</Text>
+  //       <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={logout}>
+  //         <Text style={styles.buttonText}>خروج از حساب</Text>
+  //       </TouchableOpacity>
+  //     </View>
+  //   );
+  // }
   if (user) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>سلام، {user.full_name || user.phone}</Text>
-        <Text style={styles.subtitle}>{user.phone}</Text>
-        <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={logout}>
-          <Text style={styles.buttonText}>خروج از حساب</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>سلام، {user.full_name || user.phone}</Text>
+      <Text style={styles.subtitle}>{user.phone}</Text>
+
+      <TouchableOpacity style={styles.menuRow} onPress={() => router.push("/my-listings")}>
+        <Ionicons name="pricetags-outline" size={19} color="#00a884" />
+        <Text style={styles.menuRowText}>اعلان‌های من</Text>
+        <Ionicons name="chevron-back" size={18} color="#c7cad1" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={logout}>
+        <Text style={styles.buttonText}>خروج از حساب</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
   const handleSubmit = async () => {
     if (!phone || !password || (mode === "register" && !fullName)) {
@@ -113,6 +136,23 @@ export default function Profile() {
 }
 
 const styles = StyleSheet.create({
+
+  //
+  menuRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 10,
+  backgroundColor: "#fff",
+  borderWidth: 1,
+  borderColor: "#eef0f2",
+  borderRadius: 12,
+  paddingHorizontal: 14,
+  paddingVertical: 14,
+  marginTop: 20,
+},
+menuRowText: { flex: 1, fontSize: 14.5, fontWeight: "600", color: "#1a1a1a" },
+
+  //
   container: { flex: 1, padding: 20, justifyContent: "center" },
   title: { fontSize: 20, fontWeight: "700", textAlign: "center", marginBottom: 8 },
   subtitle: { fontSize: 14, color: "#666", textAlign: "center", marginBottom: 24 },
