@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { getListing } from "../../utils/listings";
 import { useAuth } from "../../context/AuthContext";
+import { startConversation } from "../../utils/chat";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85;
@@ -24,8 +25,8 @@ const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85;
 export default function ListingDetail() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-  const [item, setItem] = useState<any>(null);
+  const { user, token } = useAuth();
+  const [item, setItem] = useState<any>(null);  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -37,12 +38,25 @@ export default function ListingDetail() {
     );
   };
 
-  const handleMessage = () => {
-    if (!item?.owner_phone) return;
-    Linking.openURL(`sms:${item.owner_phone}`).catch(() =>
-      Alert.alert("خطا", "امکان ارسال پیام وجود ندارد.")
-    );
-  };
+  // const handleMessage = () => {
+  //   if (!item?.owner_phone) return;
+  //   Linking.openURL(`sms:${item.owner_phone}`).catch(() =>
+  //     Alert.alert("خطا", "امکان ارسال پیام وجود ندارد.")
+  //   );
+  // };
+
+ const handleMessage = async () => {
+   if (!user) {
+     router.push("/profile");
+     return;
+   }
+   try {
+     const conversation = await startConversation(item.id, token);
+     router.push(`/chat/${conversation.id}`);
+   } catch (err: any) {
+     Alert.alert("خطا", err.message);
+   }
+ };
 
   useEffect(() => {
     getListing(id as string)

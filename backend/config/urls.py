@@ -7,6 +7,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
     path("api/listings/", include("listings.urls")),
+    path("api/chats/", include("chats.urls")),
 
 ]
 if settings.DEBUG:

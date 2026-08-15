@@ -18,7 +18,7 @@ import ListingCard from "../../components/ListingCard";
 import { categories } from "../../data/categories";
 import { useAuth } from "../../context/AuthContext";
 
-const APP_NAME = "ازدور"; // TODO: replace with your real app/brand name
+const APP_NAME = "ازدور"; 
 
 export default function Home() {
   const { user } = useAuth();
@@ -103,10 +103,13 @@ export default function Home() {
           </View>
 
           <View style={styles.brandRight}>
-            <TouchableOpacity style={styles.iconButton}>
+            {/* <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="notifications-outline" size={19} color="#fff" />
               <View style={styles.notifDot} />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+            <TouchableOpacity style={styles.iconButton} onPress={() => router.push("/conversations")}>
+  <Ionicons name="chatbubbles-outline" size={19} color="#fff" />
+</TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
               onPress={() => router.push("/profile")}
@@ -118,7 +121,7 @@ export default function Home() {
 
         {/* Greeting */}
         <Text style={styles.heroGreeting}>
-          {firstName ? `سلام، ${firstName} 👋` : "به بازارچه خوش آمدید 👋"}
+          {firstName ? `سلام، ${firstName} 👋` : "به ازدور خوش آمدید 👋"}
         </Text>
         <Text style={styles.heroSubtitle}>چه چیزی امروز نیاز داری؟</Text>
 
