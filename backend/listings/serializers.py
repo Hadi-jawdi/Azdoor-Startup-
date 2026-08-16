@@ -12,8 +12,9 @@
 # class ListingSerializer(serializers.ModelSerializer):
 #     owner_name = serializers.CharField(source="owner.full_name", read_only=True)
 #     owner_phone = serializers.CharField(source="owner.phone", read_only=True)
-
 #     category_display = serializers.CharField(source="get_category_display", read_only=True)
+#     deal_type_display = serializers.CharField(source="get_deal_type_display", read_only=True)
+#     property_type_display = serializers.CharField(source="get_property_type_display", read_only=True)
 #     images = ListingImageSerializer(many=True, read_only=True)
 #     uploaded_images = serializers.ListField(
 #         child=serializers.ImageField(), write_only=True, required=False
@@ -23,8 +24,9 @@
 #     class Meta:
 #         model = Listing
 #         fields = [
-#             "id", "title", "price", "location", "category",
-#             "category_display", "description", "created_at",
+#             "id", "title", "price", "location", "category", "category_display",
+#             "deal_type", "deal_type_display", "property_type", "property_type_display",
+#             "description", "created_at",
 #             "owner", "owner_name", "owner_phone", "images", "uploaded_images", "is_favorited",
 #         ]
 #         read_only_fields = ["owner"]
@@ -34,6 +36,17 @@
 #         if not request or not request.user.is_authenticated:
 #             return False
 #         return obj.favorited_by.filter(user=request.user).exists()
+
+#     def validate(self, data):
+#         category = data.get("category", getattr(self.instance, "category", None))
+#         if category == "real-estate":
+#             deal_type = data.get("deal_type", getattr(self.instance, "deal_type", None))
+#             property_type = data.get("property_type", getattr(self.instance, "property_type", None))
+#             if not deal_type:
+#                 raise serializers.ValidationError({"deal_type": "نوع معامله را انتخاب کنید."})
+#             if not property_type:
+#                 raise serializers.ValidationError({"property_type": "نوع ملک را انتخاب کنید."})
+#         return data
 
 #     def validate_uploaded_images(self, value):
 #         if len(value) > 4:
@@ -46,6 +59,7 @@
 #         for img in images:
 #             ListingImage.objects.create(listing=listing, image=img)
 #         return listing
+
 
 from rest_framework import serializers
 from .models import Listing, ListingImage, Favorite
@@ -63,6 +77,7 @@ class ListingSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source="get_category_display", read_only=True)
     deal_type_display = serializers.CharField(source="get_deal_type_display", read_only=True)
     property_type_display = serializers.CharField(source="get_property_type_display", read_only=True)
+    employment_type_display = serializers.CharField(source="get_employment_type_display", read_only=True)
     images = ListingImageSerializer(many=True, read_only=True)
     uploaded_images = serializers.ListField(
         child=serializers.ImageField(), write_only=True, required=False
@@ -74,6 +89,7 @@ class ListingSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "price", "location", "category", "category_display",
             "deal_type", "deal_type_display", "property_type", "property_type_display",
+            "employment_type", "employment_type_display",
             "description", "created_at",
             "owner", "owner_name", "owner_phone", "images", "uploaded_images", "is_favorited",
         ]
@@ -94,6 +110,10 @@ class ListingSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"deal_type": "نوع معامله را انتخاب کنید."})
             if not property_type:
                 raise serializers.ValidationError({"property_type": "نوع ملک را انتخاب کنید."})
+        if category == "jobs":
+            employment_type = data.get("employment_type", getattr(self.instance, "employment_type", None))
+            if not employment_type:
+                raise serializers.ValidationError({"employment_type": "نوع همکاری را انتخاب کنید."})
         return data
 
     def validate_uploaded_images(self, value):
