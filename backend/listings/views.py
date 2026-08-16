@@ -83,8 +83,12 @@ class ListingListCreateView(generics.ListCreateAPIView):
         qs = super().get_queryset()
         category = self.request.query_params.get("category")
         search = self.request.query_params.get("search")
+        city = self.request.query_params.get("city")
+
         if category:
             qs = qs.filter(category=category)
+        if city:
+            qs = qs.filter(location__icontains=city)
         if search:
             qs = qs.filter(Q(title__icontains=search) | Q(location__icontains=search))
         return qs

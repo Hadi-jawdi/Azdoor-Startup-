@@ -11,9 +11,10 @@ const BASE_URL = "http://localhost:8000/api";
 export function getListing(id) {
   return apiRequest(`/listings/${id}/`);
 }
-export function getListings({ categoryId, search } = {}) {
+export function getListings({ categoryId, cityId, search } = {}) {
   const params = new URLSearchParams();
   if (categoryId) params.append("category", categoryId);
+  if (cityId) params.append("city", cityId);
   if (search) params.append("search", search);
   const query = params.toString() ? `?${params.toString()}` : "";
   return apiRequest(`/listings/${query}`);
