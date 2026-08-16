@@ -38,12 +38,7 @@ export default function ListingDetail() {
     );
   };
 
-  // const handleMessage = () => {
-  //   if (!item?.owner_phone) return;
-  //   Linking.openURL(`sms:${item.owner_phone}`).catch(() =>
-  //     Alert.alert("خطا", "امکان ارسال پیام وجود ندارد.")
-  //   );
-  // };
+  
 
  const handleMessage = async () => {
    if (!user) {
@@ -151,6 +146,18 @@ export default function ListingDetail() {
               <Ionicons name="pricetag-outline" size={14} color="#5f6570" />
               <Text style={styles.pillText}>{item.category_display}</Text>
             </View>
+              {item.deal_type_display && (
+     <View style={styles.pill}>
+       <Ionicons name="swap-horizontal-outline" size={14} color="#5f6570" />
+       <Text style={styles.pillText}>{item.deal_type_display}</Text>
+     </View>
+   )}
+   {item.property_type_display && (
+     <View style={styles.pill}>
+       <Ionicons name="business-outline" size={14} color="#5f6570" />
+       <Text style={styles.pillText}>{item.property_type_display}</Text>
+     </View>
+   )}
           </View>
 
           <View style={styles.divider} />

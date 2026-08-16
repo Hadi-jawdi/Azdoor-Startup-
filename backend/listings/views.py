@@ -84,9 +84,14 @@ class ListingListCreateView(generics.ListCreateAPIView):
         category = self.request.query_params.get("category")
         search = self.request.query_params.get("search")
         city = self.request.query_params.get("city")
-
+        deal_type = self.request.query_params.get("deal_type")
+        property_type = self.request.query_params.get("property_type")
         if category:
             qs = qs.filter(category=category)
+        if deal_type:
+           qs = qs.filter(deal_type=deal_type)
+        if property_type:
+          qs = qs.filter(property_type=property_type)
         if city:
             qs = qs.filter(location__icontains=city)
         if search:
