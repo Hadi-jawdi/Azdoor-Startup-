@@ -22,11 +22,13 @@ export async function apiRequest(path, { method = "GET", body, token } = {}) {
   return data;
 }
 
-export function getListings({ categoryId, cityId, search } = {}) {
+export function getListings({ categoryId, cityId, search, dealType, propertyType} = {}) {
   const params = new URLSearchParams();
   if (categoryId) params.append("category", categoryId);
   if (cityId) params.append("city", cityId);
   if (search) params.append("search", search);
+  if (dealType) params.append("deal_type", dealType);
+  if (propertyType) params.append("property_type", propertyType);
   const query = params.toString() ? `?${params.toString()}` : "";
   return apiRequest(`/listings/${query}`);
 }
