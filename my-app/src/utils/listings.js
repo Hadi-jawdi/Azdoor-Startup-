@@ -37,12 +37,15 @@ export function getListing(id) {
 
 export async function createListing(
   // { title, price, location, description, category, deal_type, property_type, images },
-  { title, price, location, description, category, deal_type, property_type, employment_type, images },
+  // { title, price, location, description, category, deal_type, property_type, employment_type, images },
+  { title, price, location, address, description, category, deal_type, property_type, employment_type, images },
+
   token
 ) {
   const form = new FormData();
   form.append("title", title);
   // form.append("price", price);
+  form.append("address", address || "");
   form.append("price", price || "");
   form.append("location", location);
   form.append("description", description || "");

@@ -13,11 +13,14 @@ CATEGORY_CHOICES = [
 DEAL_TYPE_CHOICES = [
     ("rent", "اجاره"),
     ("sale", "فروش"),
+    ("mortgage", "رهن"),
 ]
 
 PROPERTY_TYPE_CHOICES = [
     ("residential", "مسکونی"),
     ("commercial", "تجاری"),
+    ("admin-commercial", "اداری و تجاری"),
+    
 ]
 
 EMPLOYMENT_TYPE_CHOICES = [
@@ -33,9 +36,11 @@ class Listing(models.Model):
     title = models.CharField(max_length=150)
     price = models.CharField(max_length=50, blank=True)
     location = models.CharField(max_length=100)
+    address = models.CharField(max_length=500, default='لطفآ تماس  بگیرید')
+
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     deal_type = models.CharField(max_length=10, choices=DEAL_TYPE_CHOICES, blank=True, null=True)
-    property_type = models.CharField(max_length=15, choices=PROPERTY_TYPE_CHOICES, blank=True, null=True)
+    property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, blank=True, null=True)
     employment_type = models.CharField(max_length=15, choices=EMPLOYMENT_TYPE_CHOICES, blank=True, null=True)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

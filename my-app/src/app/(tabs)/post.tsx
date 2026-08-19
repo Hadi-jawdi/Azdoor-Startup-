@@ -1,4 +1,5 @@
 
+
 // import { useState } from "react";
 // import {
 //   View,
@@ -33,6 +34,13 @@
 //   { id: "commercial", title: "تجاری" },
 // ];
 
+// const EMPLOYMENT_TYPES = [
+//   { id: "full-time", title: "تمام وقت" },
+//   { id: "part-time", title: "پاره وقت" },
+//   { id: "remote", title: "دورکار" },
+//   { id: "internship", title: "کارآموزی" },
+// ];
+
 // export default function PostAd() {
 //   const { user, token } = useAuth();
 //   const insets = useSafeAreaInsets();
@@ -43,10 +51,12 @@
 //   const [categoryId, setCategoryId] = useState<string | null>(null);
 //   const [dealType, setDealType] = useState<string | null>(null);
 //   const [propertyType, setPropertyType] = useState<string | null>(null);
+//   const [employmentType, setEmploymentType] = useState<string | null>(null);
 //   const [images, setImages] = useState<string[]>([]);
 //   const [submitting, setSubmitting] = useState(false);
 
 //   const isRealEstate = categoryId === "real-estate";
+//   const isJobs = categoryId === "jobs";
 //   const selectedCategory = categories.find((c) => c.id === categoryId);
 
 //   const Header = ({ subtitle }: { subtitle: string }) => (
@@ -109,12 +119,16 @@
 //       Alert.alert("خطا", "لطفاً نوع معامله و نوع ملک را انتخاب کنید.");
 //       return;
 //     }
-//     if (images.length === 0) {
+//     if (isJobs && !employmentType) {
+//       Alert.alert("خطا", "لطفاً نوع همکاری را انتخاب کنید.");
+//       return;
+//     }
+//     if (!isJobs && images.length === 0) {
 //       Alert.alert("خطا", "لطفاً حداقل یک عکس اضافه کنید.");
 //       return;
 //     }
-//     if (!title || !price || !location) {
-//       Alert.alert("خطا", "لطفاً عنوان، قیمت و موقعیت را وارد کنید.");
+//     if (!title || !location || (!isJobs && !price)) {
+//       Alert.alert("خطا", "لطفاً فیلدهای الزامی را تکمیل کنید.");
 //       return;
 //     }
 //     setSubmitting(true);
@@ -128,13 +142,14 @@
 //           category: categoryId,
 //           deal_type: isRealEstate ? dealType : null,
 //           property_type: isRealEstate ? propertyType : null,
+//           employment_type: isJobs ? employmentType : null,
 //           images,
 //         },
 //         token
 //       );
 //       Alert.alert("موفق", "اعلان شما ثبت شد.");
 //       setTitle(""); setPrice(""); setLocation(""); setDescription(""); setImages([]);
-//       setCategoryId(null); setDealType(null); setPropertyType(null);
+//       setCategoryId(null); setDealType(null); setPropertyType(null); setEmploymentType(null);
 //       router.push("/");
 //     } catch (err: any) {
 //       Alert.alert("خطا", err.message);
@@ -142,6 +157,14 @@
 //       setSubmitting(false);
 //     }
 //   };
+
+//   // Compute step numbers dynamically since real-estate/jobs cards are conditional
+//   let step = 1;
+//   const stepCategory = step++;
+//   const stepDetails = isRealEstate || isJobs ? step++ : null;
+//   const stepPhotos = isJobs ? null : step++; // jobs skip photos entirely
+//   const stepBasic = step++;
+//   const stepDescription = step++;
 
 //   return (
 //     <KeyboardAvoidingView
@@ -153,11 +176,11 @@
 //         <Header subtitle="مرحله به مرحله اعلان خود را تکمیل کنید" />
 
 //         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-//           {/* Step 1 — Category */}
+//           {/* Category */}
 //           <View style={styles.card}>
 //             <View style={styles.cardHeaderRow}>
 //               <View style={styles.stepBadge}>
-//                 <Text style={styles.stepBadgeText}>۱</Text>
+//                 <Text style={styles.stepBadgeText}>{toFarsiNum(stepCategory)}</Text>
 //               </View>
 //               <Text style={styles.cardHeader}>دسته‌بندی</Text>
 //               <Text style={styles.required}>الزامی</Text>
@@ -186,12 +209,12 @@
 //             </View>
 //           </View>
 
-//           {/* Step 2 — Real estate details (conditional) */}
+//           {/* Real estate details */}
 //           {isRealEstate && (
 //             <View style={styles.card}>
 //               <View style={styles.cardHeaderRow}>
 //                 <View style={styles.stepBadge}>
-//                   <Text style={styles.stepBadgeText}>۲</Text>
+//                   <Text style={styles.stepBadgeText}>{toFarsiNum(stepDetails!)}</Text>
 //                 </View>
 //                 <Text style={styles.cardHeader}>جزئیات ملک</Text>
 //                 <Text style={styles.required}>الزامی</Text>
@@ -229,52 +252,82 @@
 //             </View>
 //           )}
 
-//           {/* Step — Photos */}
-//           <View style={styles.card}>
-//             <View style={styles.cardHeaderRow}>
-//               <View style={styles.stepBadge}>
-//                 <Text style={styles.stepBadgeText}>{isRealEstate ? "۳" : "۲"}</Text>
-//               </View>
-//               <Text style={styles.cardHeader}>عکس‌ها</Text>
-//               <Text style={styles.required}>الزامی</Text>
-//               <Text style={styles.cardHeaderCount}>{images.length}/{MAX_IMAGES}</Text>
-//             </View>
-//             <Text style={styles.cardHint}>عکس اول به‌عنوان تصویر اصلی اعلان نمایش داده می‌شود.</Text>
-
-//             <View style={styles.imageGrid}>
-//               {images.map((uri, i) => (
-//                 <View key={uri} style={styles.imageSlot}>
-//                   <Image source={{ uri }} style={styles.imageThumb} />
-//                   {i === 0 && (
-//                     <View style={styles.mainBadge}>
-//                       <Text style={styles.mainBadgeText}>اصلی</Text>
-//                     </View>
-//                   )}
-//                   <TouchableOpacity style={styles.removeBadge} onPress={() => removeImage(uri)}>
-//                     <Ionicons name="close" size={13} color="#fff" />
-//                   </TouchableOpacity>
+//           {/* Job details */}
+//           {isJobs && (
+//             <View style={styles.card}>
+//               <View style={styles.cardHeaderRow}>
+//                 <View style={styles.stepBadge}>
+//                   <Text style={styles.stepBadgeText}>{toFarsiNum(stepDetails!)}</Text>
 //                 </View>
-//               ))}
-//               {images.length < MAX_IMAGES && (
-//                 <TouchableOpacity style={styles.addImageBox} onPress={pickImages}>
-//                   <Ionicons name="camera-outline" size={22} color="#00a884" />
-//                   <Text style={styles.addImageText}>افزودن</Text>
-//                 </TouchableOpacity>
-//               )}
-//             </View>
-//           </View>
+//                 <Text style={styles.cardHeader}>جزئیات شغل</Text>
+//                 <Text style={styles.required}>الزامی</Text>
+//               </View>
 
-//           {/* Step — Basic info */}
+//               <Text style={styles.label}>نوع همکاری</Text>
+//               <View style={styles.jobTypeGrid}>
+//                 {EMPLOYMENT_TYPES.map((j) => (
+//                   <TouchableOpacity
+//                     key={j.id}
+//                     style={[styles.jobTypeChip, employmentType === j.id && styles.optionChipActive]}
+//                     onPress={() => setEmploymentType(j.id)}
+//                   >
+//                     <Text style={[styles.optionChipText, employmentType === j.id && styles.optionChipTextActive]}>
+//                       {j.title}
+//                     </Text>
+//                   </TouchableOpacity>
+//                 ))}
+//               </View>
+//             </View>
+//           )}
+
+//           {/* Photos — skipped entirely for jobs */}
+//           {!isJobs && (
+//             <View style={styles.card}>
+//               <View style={styles.cardHeaderRow}>
+//                 <View style={styles.stepBadge}>
+//                   <Text style={styles.stepBadgeText}>{toFarsiNum(stepPhotos!)}</Text>
+//                 </View>
+//                 <Text style={styles.cardHeader}>عکس‌ها</Text>
+//                 <Text style={styles.required}>الزامی</Text>
+//                 <Text style={styles.cardHeaderCount}>{images.length}/{MAX_IMAGES}</Text>
+//               </View>
+//               <Text style={styles.cardHint}>عکس اول به‌عنوان تصویر اصلی اعلان نمایش داده می‌شود.</Text>
+
+//               <View style={styles.imageGrid}>
+//                 {images.map((uri, i) => (
+//                   <View key={uri} style={styles.imageSlot}>
+//                     <Image source={{ uri }} style={styles.imageThumb} />
+//                     {i === 0 && (
+//                       <View style={styles.mainBadge}>
+//                         <Text style={styles.mainBadgeText}>اصلی</Text>
+//                       </View>
+//                     )}
+//                     <TouchableOpacity style={styles.removeBadge} onPress={() => removeImage(uri)}>
+//                       <Ionicons name="close" size={13} color="#fff" />
+//                     </TouchableOpacity>
+//                   </View>
+//                 ))}
+//                 {images.length < MAX_IMAGES && (
+//                   <TouchableOpacity style={styles.addImageBox} onPress={pickImages}>
+//                     <Ionicons name="camera-outline" size={22} color="#00a884" />
+//                     <Text style={styles.addImageText}>افزودن</Text>
+//                   </TouchableOpacity>
+//                 )}
+//               </View>
+//             </View>
+//           )}
+
+//           {/* Basic info */}
 //           <View style={styles.card}>
 //             <View style={styles.cardHeaderRow}>
 //               <View style={styles.stepBadge}>
-//                 <Text style={styles.stepBadgeText}>{isRealEstate ? "۴" : "۳"}</Text>
+//                 <Text style={styles.stepBadgeText}>{toFarsiNum(stepBasic)}</Text>
 //               </View>
 //               <Text style={styles.cardHeader}>اطلاعات اصلی</Text>
 //               <Text style={styles.required}>الزامی</Text>
 //             </View>
 
-//             <Text style={styles.label}>عنوان اعلان</Text>
+//             <Text style={styles.label}>{isJobs ? "عنوان شغلی" : "عنوان اعلان"}</Text>
 //             <View style={styles.inputWrap}>
 //               <Ionicons name="pricetags-outline" size={17} color="#9a9ea6" style={styles.inputIcon} />
 //               <TextInput
@@ -282,26 +335,30 @@
 //                 value={title}
 //                 onChangeText={setTitle}
 //                 placeholder={
-//                   selectedCategory ? `مثلاً: ${selectedCategory.title} در حالت خوب` : "عنوان اعلان را بنویسید"
+//                   isJobs
+//                     ? "مثلاً: نیازمند برنامه‌نویس React Native"
+//                     : selectedCategory
+//                     ? `مثلاً: ${selectedCategory.title} در حالت خوب`
+//                     : "عنوان اعلان را بنویسید"
 //                 }
 //                 placeholderTextColor="#b6b9bf"
 //               />
 //             </View>
 
-//             <Text style={styles.label}>قیمت</Text>
+//             <Text style={styles.label}>{isJobs ? "حقوق (اختیاری)" : "قیمت"}</Text>
 //             <View style={styles.inputWrap}>
 //               <Ionicons name="cash-outline" size={17} color="#9a9ea6" style={styles.inputIcon} />
 //               <TextInput
 //                 style={styles.input}
 //                 value={price}
 //                 onChangeText={setPrice}
-//                 keyboardType="numeric"
-//                 placeholder="مبلغ به افغانی"
+//                 keyboardType={isJobs ? "default" : "numeric"}
+//                 placeholder={isJobs ? "مبلغ یا توافقی" : "مبلغ به افغانی"}
 //                 placeholderTextColor="#b6b9bf"
 //               />
 //             </View>
 
-//             <Text style={styles.label}>موقعیت</Text>
+//             <Text style={styles.label}>{isJobs ? "محل کار" : "موقعیت"}</Text>
 //             <View style={styles.inputWrap}>
 //               <Ionicons name="location-outline" size={17} color="#9a9ea6" style={styles.inputIcon} />
 //               <TextInput
@@ -314,20 +371,24 @@
 //             </View>
 //           </View>
 
-//           {/* Step — Description */}
+//           {/* Description */}
 //           <View style={styles.card}>
 //             <View style={styles.cardHeaderRow}>
 //               <View style={styles.stepBadge}>
-//                 <Text style={styles.stepBadgeText}>{isRealEstate ? "۵" : "۴"}</Text>
+//                 <Text style={styles.stepBadgeText}>{toFarsiNum(stepDescription)}</Text>
 //               </View>
-//               <Text style={styles.cardHeader}>توضیحات</Text>
+//               <Text style={styles.cardHeader}>{isJobs ? "شرایط و توضیحات شغل" : "توضیحات"}</Text>
 //               <Text style={styles.optionalTag}>اختیاری</Text>
 //             </View>
 //             <TextInput
 //               style={styles.textArea}
 //               value={description}
 //               onChangeText={(t) => setDescription(t.slice(0, MAX_DESCRIPTION))}
-//               placeholder="جزئیات، وضعیت، و هر نکته‌ای که خریدار باید بداند..."
+//               placeholder={
+//                 isJobs
+//                   ? "شرح وظایف، شرایط لازم، مزایا و..."
+//                   : "جزئیات، وضعیت، و هر نکته‌ای که خریدار باید بداند..."
+//               }
 //               placeholderTextColor="#b6b9bf"
 //               multiline
 //               textAlignVertical="top"
@@ -353,6 +414,11 @@
 //       </View>
 //     </KeyboardAvoidingView>
 //   );
+// }
+
+// function toFarsiNum(n: number) {
+//   const farsiDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+//   return String(n).split("").map((d) => farsiDigits[Number(d)]).join("");
 // }
 
 // const styles = StyleSheet.create({
@@ -456,6 +522,13 @@
 //   optionChipText: { fontSize: 13.5, color: "#5f6570", fontWeight: "600" },
 //   optionChipTextActive: { color: "#fff" },
 
+//   jobTypeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+//   jobTypeChip: {
+//     width: "47%", alignItems: "center",
+//     borderWidth: 1, borderColor: "#e4e6ea", borderRadius: 10,
+//     paddingVertical: 12, backgroundColor: "#fbfbfc",
+//   },
+
 //   textArea: {
 //     borderWidth: 1, borderColor: "#e4e6ea", borderRadius: 10,
 //     backgroundColor: "#fbfbfc", padding: 12, marginTop: 10,
@@ -474,7 +547,6 @@
 //   submitButtonText: { color: "#fff", fontWeight: "700", fontSize: 15.5 },
 // });
 
-
 import { useState } from "react";
 import {
   View,
@@ -487,6 +559,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -495,18 +568,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
 import { createListing } from "../../utils/listings";
 import { categories } from "../../data/categories";
+import { cities } from "../../data/cities";
 
 const MAX_IMAGES = 4;
 const MAX_DESCRIPTION = 500;
 
 const DEAL_TYPES = [
   { id: "rent", title: "اجاره" },
+  { id: "mortgage", title: "رهن" },
   { id: "sale", title: "فروش" },
 ];
 
 const PROPERTY_TYPES = [
   { id: "residential", title: "مسکونی" },
   { id: "commercial", title: "تجاری" },
+  { id: "admin-commercial", title: "اداری و تجاری" },
 ];
 
 const EMPLOYMENT_TYPES = [
@@ -516,12 +592,18 @@ const EMPLOYMENT_TYPES = [
   { id: "internship", title: "کارآموزی" },
 ];
 
+function toFarsiNum(n: number) {
+  const farsiDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+  return String(n).split("").map((d) => farsiDigits[Number(d)]).join("");
+}
+
 export default function PostAd() {
   const { user, token } = useAuth();
   const insets = useSafeAreaInsets();
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
-  const [location, setLocation] = useState("");
+  const [cityId, setCityId] = useState<string | null>(null);
+  const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [dealType, setDealType] = useState<string | null>(null);
@@ -529,10 +611,12 @@ export default function PostAd() {
   const [employmentType, setEmploymentType] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [cityModalVisible, setCityModalVisible] = useState(false);
 
   const isRealEstate = categoryId === "real-estate";
   const isJobs = categoryId === "jobs";
   const selectedCategory = categories.find((c) => c.id === categoryId);
+  const selectedCityLabel = cities.find((c) => c.id === cityId)?.title;
 
   const Header = ({ subtitle }: { subtitle: string }) => (
     <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
@@ -602,7 +686,7 @@ export default function PostAd() {
       Alert.alert("خطا", "لطفاً حداقل یک عکس اضافه کنید.");
       return;
     }
-    if (!title || !location || (!isJobs && !price)) {
+    if (!title || !cityId || (!isJobs && !price)) {
       Alert.alert("خطا", "لطفاً فیلدهای الزامی را تکمیل کنید.");
       return;
     }
@@ -612,7 +696,8 @@ export default function PostAd() {
         {
           title,
           price,
-          location,
+          location: selectedCityLabel || "",
+          address,
           description,
           category: categoryId,
           deal_type: isRealEstate ? dealType : null,
@@ -623,7 +708,7 @@ export default function PostAd() {
         token
       );
       Alert.alert("موفق", "اعلان شما ثبت شد.");
-      setTitle(""); setPrice(""); setLocation(""); setDescription(""); setImages([]);
+      setTitle(""); setPrice(""); setCityId(null); setAddress(""); setDescription(""); setImages([]);
       setCategoryId(null); setDealType(null); setPropertyType(null); setEmploymentType(null);
       router.push("/");
     } catch (err: any) {
@@ -633,11 +718,10 @@ export default function PostAd() {
     }
   };
 
-  // Compute step numbers dynamically since real-estate/jobs cards are conditional
   let step = 1;
   const stepCategory = step++;
   const stepDetails = isRealEstate || isJobs ? step++ : null;
-  const stepPhotos = isJobs ? null : step++; // jobs skip photos entirely
+  const stepPhotos = isJobs ? null : step++;
   const stepBasic = step++;
   const stepDescription = step++;
 
@@ -696,11 +780,13 @@ export default function PostAd() {
               </View>
 
               <Text style={styles.label}>نوع معامله</Text>
-              <View style={styles.optionRow}>
+              <View style={styles.jobTypeGrid}>
                 {DEAL_TYPES.map((d) => (
                   <TouchableOpacity
                     key={d.id}
-                    style={[styles.optionChip, dealType === d.id && styles.optionChipActive]}
+                    // style={[styles.optionChip, dealType === d.id && styles.optionChipActive]}
+                    style={[styles.jobTypeChip, dealType === d.id && styles.optionChipActive]}
+
                     onPress={() => setDealType(d.id)}
                   >
                     <Text style={[styles.optionChipText, dealType === d.id && styles.optionChipTextActive]}>
@@ -711,11 +797,11 @@ export default function PostAd() {
               </View>
 
               <Text style={styles.label}>نوع ملک</Text>
-              <View style={styles.optionRow}>
+              <View style={styles.jobTypeGrid}>
                 {PROPERTY_TYPES.map((p) => (
                   <TouchableOpacity
                     key={p.id}
-                    style={[styles.optionChip, propertyType === p.id && styles.optionChipActive]}
+                    style={[styles.jobTypeChip, propertyType === p.id && styles.optionChipActive]}
                     onPress={() => setPropertyType(p.id)}
                   >
                     <Text style={[styles.optionChipText, propertyType === p.id && styles.optionChipTextActive]}>
@@ -755,7 +841,7 @@ export default function PostAd() {
             </View>
           )}
 
-          {/* Photos — skipped entirely for jobs */}
+          {/* Photos */}
           {!isJobs && (
             <View style={styles.card}>
               <View style={styles.cardHeaderRow}>
@@ -813,7 +899,7 @@ export default function PostAd() {
                   isJobs
                     ? "مثلاً: نیازمند برنامه‌نویس React Native"
                     : selectedCategory
-                    ? `مثلاً: ${selectedCategory.title} در حالت خوب`
+                    ? `مثلاً: ${selectedCategory.title}`
                     : "عنوان اعلان را بنویسید"
                 }
                 placeholderTextColor="#b6b9bf"
@@ -833,14 +919,23 @@ export default function PostAd() {
               />
             </View>
 
-            <Text style={styles.label}>{isJobs ? "محل کار" : "موقعیت"}</Text>
+            <Text style={styles.label}>{isJobs ? "شهر محل کار" : "شهر"}</Text>
+            <TouchableOpacity style={styles.dropdownWrap} onPress={() => setCityModalVisible(true)}>
+              <Ionicons name="location-outline" size={17} color="#9a9ea6" />
+              <Text style={[styles.dropdownText, !selectedCityLabel && styles.dropdownPlaceholder]}>
+                {selectedCityLabel || "شهر را انتخاب کنید"}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="#9a9ea6" />
+            </TouchableOpacity>
+
+            <Text style={styles.label}>آدرس دقیق (اختیاری)</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="location-outline" size={17} color="#9a9ea6" style={styles.inputIcon} />
+              <Ionicons name="navigate-outline" size={17} color="#9a9ea6" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                value={location}
-                onChangeText={setLocation}
-                placeholder="شهر، منطقه"
+                value={address}
+                onChangeText={setAddress}
+                placeholder="مثلاً: کارته سه، نزدیک مسجد"
                 placeholderTextColor="#b6b9bf"
               />
             </View>
@@ -874,7 +969,6 @@ export default function PostAd() {
           <View style={{ height: 90 }} />
         </ScrollView>
 
-        {/* Sticky submit bar */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
@@ -887,13 +981,44 @@ export default function PostAd() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* City picker modal */}
+      <Modal
+        visible={cityModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setCityModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setCityModalVisible(false)}
+        >
+          <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>شهر خود را انتخاب کنید</Text>
+            {cities.map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                style={styles.modalRow}
+                onPress={() => {
+                  setCityId(c.id);
+                  setCityModalVisible(false);
+                }}
+              >
+                <Ionicons
+                  name={cityId === c.id ? "radio-button-on" : "radio-button-off"}
+                  size={20}
+                  color={cityId === c.id ? "#00a884" : "#c7cad1"}
+                />
+                <Text style={styles.modalRowText}>{c.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
-}
-
-function toFarsiNum(n: number) {
-  const farsiDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
-  return String(n).split("").map((d) => farsiDigits[Number(d)]).join("");
 }
 
 const styles = StyleSheet.create({
@@ -987,6 +1112,14 @@ const styles = StyleSheet.create({
   inputIcon: {},
   input: { flex: 1, paddingVertical: 12, fontSize: 14.5, color: "#1a1a1a" },
 
+  dropdownWrap: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    borderWidth: 1, borderColor: "#e4e6ea", borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 12, backgroundColor: "#fbfbfc",
+  },
+  dropdownText: { flex: 1, fontSize: 14.5, color: "#1a1a1a" },
+  dropdownPlaceholder: { color: "#b6b9bf" },
+
   optionRow: { flexDirection: "row", gap: 10 },
   optionChip: {
     flex: 1, alignItems: "center",
@@ -1020,4 +1153,22 @@ const styles = StyleSheet.create({
   submitButton: { backgroundColor: "#00a884", borderRadius: 12, paddingVertical: 15, alignItems: "center" },
   submitButtonDisabled: { backgroundColor: "#9fd6c4" },
   submitButtonText: { color: "#fff", fontWeight: "700", fontSize: 15.5 },
+
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  modalSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: "70%",
+  },
+  modalHandle: {
+    width: 36, height: 4, borderRadius: 2, backgroundColor: "#e4e6ea",
+    alignSelf: "center", marginBottom: 16,
+  },
+  modalTitle: { fontSize: 16, fontWeight: "700", color: "#1a1a1a", marginBottom: 14 },
+  modalRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
+  modalRowText: { fontSize: 14.5, color: "#1a1a1a" },
 });
+
+
