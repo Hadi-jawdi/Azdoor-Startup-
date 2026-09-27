@@ -45,6 +45,8 @@ class Listing(models.Model):
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    #for video 
+    video = models.FileField(upload_to="listing_videos/", blank=True, null=True)
     class Meta:
         ordering = ["-created_at"]
 

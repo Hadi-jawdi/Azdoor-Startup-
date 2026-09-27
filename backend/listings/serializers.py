@@ -31,7 +31,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "deal_type", "deal_type_display", "property_type", "property_type_display",
             "employment_type", "employment_type_display",
             "description", "created_at",
-            "owner", "owner_name", "owner_phone", "images", "uploaded_images", "is_favorited",
+            "owner", "owner_name", "owner_phone", "images", "uploaded_images", "is_favorited","video",
         ]
         read_only_fields = ["owner"]
 
