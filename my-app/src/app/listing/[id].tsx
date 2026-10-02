@@ -117,15 +117,17 @@ export default function ListingDetail() {
               <Ionicons name="arrow-forward" size={20} color="#1a1a1a" />
             </TouchableOpacity>
           </View>
-
-          {/* Dot pagination */}
-          {images.length > 1 && (
-            <View style={styles.dotsRow}>
-              {images.map((_, i) => (
-                <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
-              ))}
-            </View>
-          )}
+        {/* Dot pagination */}
+{images.length > 1 && (
+  <View style={styles.dotsRow}>
+    {images.map((_: any, i: number) => (
+      <View
+        key={i}
+        style={[styles.dot, i === activeIndex && styles.dotActive]}
+      />
+    ))}
+  </View>
+)}
         </View>
 
         {/* Content sheet, overlapping the image slightly */}
