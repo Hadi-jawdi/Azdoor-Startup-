@@ -2,7 +2,6 @@ import { Image } from "react-native";
 // ...
 import Logo from "../../../assets/icon.png";
 
-
 import { useCallback, useRef, useState } from "react";
 import {
   View,
@@ -15,14 +14,13 @@ import {
   TouchableOpacity,
   Modal,
 } from "react-native";
-import { useFocusEffect, router, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, router } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getListings } from "../../utils/listings";
 import ListingCard from "../../components/ListingCard";
-import { categories } from "../../data/categories";
 import { cities } from "../../data/cities";
 import { useAuth } from "../../context/AuthContext";
 
@@ -40,31 +38,26 @@ const PROPERTY_TYPES = [
   { id: "admin-commercial", title: "اداری و تجاری", icon: "business-outline" },
 ];
 
+// The platform only handles real estate, so the category is fixed.
+const REAL_ESTATE_ID = "real-estate";
+
 export default function Home() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const params = useLocalSearchParams<{ categoryId?: string }>();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeCity, setActiveCity] = useState<string | null>(null);
   const [activeDealType, setActiveDealType] = useState<string | null>(null);
   const [activePropertyType, setActivePropertyType] = useState<string | null>(null);
   const [cityModalVisible, setCityModalVisible] = useState(false);
-  const [realEstateModalVisible, setRealEstateModalVisible] = useState(false);
-  const [draftDealType, setDraftDealType] = useState<string | null>(null);
-  const [draftPropertyType, setDraftPropertyType] = useState<string | null>(null);
   const searchTimer = useRef<any>(null);
-
-  const isRealEstateActive = activeCategory === "real-estate";
 
   const load = async (opts?: {
     search?: string;
-    categoryId?: string | null;
     cityId?: string | null;
     dealType?: string | null;
     propertyType?: string | null;
@@ -72,7 +65,7 @@ export default function Home() {
     try {
       const data = await getListings({
         search: opts?.search !== undefined ? opts.search : search,
-        categoryId: opts?.categoryId !== undefined ? opts.categoryId : activeCategory,
+        categoryId: REAL_ESTATE_ID,
         cityId: opts?.cityId !== undefined ? opts.cityId : activeCity,
         dealType: opts?.dealType !== undefined ? opts.dealType : activeDealType,
         propertyType: opts?.propertyType !== undefined ? opts.propertyType : activePropertyType,
@@ -86,29 +79,18 @@ export default function Home() {
 
   useFocusEffect(
     useCallback(() => {
-      const incoming = params.categoryId ?? null;
-      if (incoming !== activeCategory) {
-        setActiveCategory(incoming);
-        if (incoming !== "real-estate") {
-          setActiveDealType(null);
-          setActivePropertyType(null);
-        }
-        load({ categoryId: incoming, dealType: null, propertyType: null }).finally(() => setLoading(false));
-      } else {
-        load().finally(() => setLoading(false));
-      }
-    }, [params.categoryId])
+      load().finally(() => setLoading(false));
+    }, [])
   );
 
   useFocusEffect(
     useCallback(() => {
       const unsubscribe = navigation.addListener("tabPress" as any, () => {
-        setActiveCategory(null);
         setActiveCity(null);
         setActiveDealType(null);
         setActivePropertyType(null);
         setSearch("");
-        load({ categoryId: null, cityId: null, search: "", dealType: null, propertyType: null });
+        load({ cityId: null, search: "", dealType: null, propertyType: null });
       });
       return unsubscribe;
     }, [navigation])
@@ -125,37 +107,22 @@ export default function Home() {
     load({ search: "" });
   };
 
-  const onSelectCategory = (id: string) => {
-    if (id === "real-estate") {
-      // Open the filter popup instead of instantly toggling
-      setDraftDealType(activeDealType);
-      setDraftPropertyType(activePropertyType);
-      setRealEstateModalVisible(true);
-      return;
-    }
-    const next = activeCategory === id ? null : id;
-    setActiveCategory(next);
-    setActiveDealType(null);
-    setActivePropertyType(null);
-    load({ categoryId: next, dealType: null, propertyType: null });
+  const onSelectDealType = (id: string) => {
+    const next = activeDealType === id ? null : id;
+    setActiveDealType(next);
+    load({ dealType: next });
   };
 
-  const applyRealEstateFilters = () => {
-    setActiveCategory("real-estate");
-    setActiveDealType(draftDealType);
-    setActivePropertyType(draftPropertyType);
-    setRealEstateModalVisible(false);
-    load({ categoryId: "real-estate", dealType: draftDealType, propertyType: draftPropertyType });
+  const onSelectPropertyType = (id: string) => {
+    const next = activePropertyType === id ? null : id;
+    setActivePropertyType(next);
+    load({ propertyType: next });
   };
 
-  const skipRealEstateFilters = () => {
-    setActiveCategory("real-estate");
+  const clearFilters = () => {
     setActiveDealType(null);
     setActivePropertyType(null);
-    setDraftDealType(null);
-    setDraftPropertyType(null);
-    setRealEstateModalVisible(false);
-    load({ categoryId: "real-estate", dealType: null, propertyType: null });
+    load({ dealType: null, propertyType: null });
   };
 
   const onSelectCity = (id: string | null) => {
@@ -170,14 +137,12 @@ export default function Home() {
     setRefreshing(false);
   };
 
-  const activeCategoryLabel = categories.find((c) => c.id === activeCategory)?.title;
   const activeCityLabel = cities.find((c) => c.id === activeCity)?.title;
-  const activeDealTypeLabel = DEAL_TYPES.find((d) => d.id === activeDealType)?.title;
-  const activePropertyTypeLabel = PROPERTY_TYPES.find((p) => p.id === activePropertyType)?.title;
   const firstName = user?.full_name?.split(" ")[0];
   const searchPlaceholder = activeCityLabel
     ? `جستجو در ${activeCityLabel}...`
     : "جستجو در همه شهرها...";
+  const hasFilters = !!activeDealType || !!activePropertyType;
 
   if (loading) {
     return (
@@ -189,52 +154,61 @@ export default function Home() {
 
   const ListHeader = (
     <>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>دسته‌بندی‌ها</Text>
-        <Text style={styles.sectionHint}>برای فیلتر کردن روی یکی بزنید</Text>
-      </View>
-      <View style={styles.categoryGrid}>
-        {categories.map((c) => {
-          const active = activeCategory === c.id;
+      <Text style={styles.filterTitle}>نوع معامله</Text>
+      <View style={styles.dealRow}>
+        {DEAL_TYPES.map((d) => {
+          const active = activeDealType === d.id;
           return (
             <TouchableOpacity
-              key={c.id}
-              style={styles.categoryGridItem}
-              onPress={() => onSelectCategory(c.id)}
-              activeOpacity={0.75}
+              key={d.id}
+              style={[styles.dealCard, active && styles.dealCardActive]}
+              onPress={() => onSelectDealType(d.id)}
+              activeOpacity={0.8}
             >
-              <View style={[styles.categoryCircle, active && styles.categoryCircleActive]}>
-                <Ionicons name={c.icon as any} size={22} color={active ? "#fff" : "#00a884"} />
+              <View style={[styles.dealIconWrap, active && styles.dealIconWrapActive]}>
+                <Ionicons name={d.icon as any} size={22} color={active ? "#fff" : "#00a884"} />
               </View>
-              <Text style={[styles.categoryLabel, active && styles.categoryLabelActive]} numberOfLines={1}>
-                {c.title}
+              <Text style={[styles.dealText, active && styles.dealTextActive]}>{d.title}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <Text style={styles.filterTitle}>نوع ملک</Text>
+      <View style={styles.propertyTypeGrid}>
+        {PROPERTY_TYPES.map((p) => {
+          const active = activePropertyType === p.id;
+          return (
+            <TouchableOpacity
+              key={p.id}
+              style={[styles.propertyTypeCard, active && styles.propertyTypeCardActive]}
+              onPress={() => onSelectPropertyType(p.id)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.propertyTypeIconWrap, active && styles.propertyTypeIconWrapActive]}>
+                <Ionicons name={p.icon as any} size={17} color={active ? "#fff" : "#00a884"} />
+              </View>
+              <Text
+                style={[styles.propertyTypeText, active && styles.propertyTypeTextActive]}
+                numberOfLines={1}
+              >
+                {p.title}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      {isRealEstateActive && (activeDealTypeLabel || activePropertyTypeLabel) && (
-        <TouchableOpacity
-          style={styles.activeFilterBar}
-          onPress={() => {
-            setDraftDealType(activeDealType);
-            setDraftPropertyType(activePropertyType);
-            setRealEstateModalVisible(true);
-          }}
-        >
-          <Ionicons name="options" size={15} color="#00a884" />
-          <Text style={styles.activeFilterText}>
-            {[activeDealTypeLabel, activePropertyTypeLabel].filter(Boolean).join(" • ")}
-          </Text>
-          <Text style={styles.activeFilterEdit}>ویرایش</Text>
+      {hasFilters && (
+        <TouchableOpacity style={styles.clearFilters} onPress={clearFilters}>
+          <Ionicons name="close-circle" size={15} color="#00a884" />
+          <Text style={styles.clearFiltersText}>پاک کردن فیلترها</Text>
         </TouchableOpacity>
       )}
 
       {listings.length > 0 && (
         <Text style={styles.resultsCount}>
           {listings.length} اعلان
-          {activeCategoryLabel ? ` در «${activeCategoryLabel}»` : ""}
           {activeCityLabel ? ` - ${activeCityLabel}` : ""}
         </Text>
       )}
@@ -260,16 +234,14 @@ export default function Home() {
             <TouchableOpacity style={styles.iconButton} onPress={() => router.push("/profile")}>
               <Ionicons name={user ? "person" : "person-outline"} size={18} color="#fff" />
             </TouchableOpacity>
-		
-		
           </View>
         </View>
 
         {/* Greeting */}
-        <Text style={styles.heroGreeting}>
+        {/* <Text style={styles.heroGreeting}>
           {firstName ? `سلام، ${firstName} 👋` : " خوش آمدید 👋"}
         </Text>
-        <Text style={styles.heroSubtitle}>چه چیزی امروز نیاز داری؟</Text>
+        <Text style={styles.heroSubtitle}>چه چیزی امروز نیاز داری؟</Text> */}
 
         {/* Search */}
         <View style={styles.searchCard}>
@@ -337,88 +309,6 @@ export default function Home() {
               </TouchableOpacity>
             ))}
           </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Real estate filter popup */}
-      <Modal
-        visible={realEstateModalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setRealEstateModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setRealEstateModalVisible(false)}
-        >
-          <TouchableOpacity activeOpacity={1} style={[styles.reModalSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-            <View style={styles.modalHandle} />
-
-            <View style={styles.reModalHeader}>
-              <View style={styles.reModalTitleRow}>
-                <View style={styles.filterCardIconCircle}>
-                  <Ionicons name="home" size={16} color="#00a884" />
-                </View>
-                <View>
-                  <Text style={styles.reModalTitle}>فیلتر املاک</Text>
-                  <Text style={styles.reModalSubtitle}>نوع معامله و ملک مورد نظر را انتخاب کنید</Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => setRealEstateModalVisible(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="close-circle" size={24} color="#c7cad1" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.filterGroupLabel}>نوع معامله</Text>
-            <View style={styles.segmentedRow}>
-              {DEAL_TYPES.map((d) => {
-                const active = draftDealType === d.id;
-                return (
-                  <TouchableOpacity
-                    key={d.id}
-                    style={[styles.segmentedItem, active && styles.segmentedItemActive]}
-                    onPress={() => setDraftDealType(active ? null : d.id)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name={d.icon as any} size={14} color={active ? "#fff" : "#5f6570"} />
-                    <Text style={[styles.segmentedText, active && styles.segmentedTextActive]}>{d.title}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <Text style={[styles.filterGroupLabel, { marginTop: 18 }]}>نوع ملک</Text>
-            <View style={styles.propertyTypeGrid}>
-              {PROPERTY_TYPES.map((p) => {
-                const active = draftPropertyType === p.id;
-                return (
-                  <TouchableOpacity
-                    key={p.id}
-                    style={[styles.propertyTypeCard, active && styles.propertyTypeCardActive]}
-                    onPress={() => setDraftPropertyType(active ? null : p.id)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={[styles.propertyTypeIconWrap, active && styles.propertyTypeIconWrapActive]}>
-                      <Ionicons name={p.icon as any} size={17} color={active ? "#fff" : "#00a884"} />
-                    </View>
-                    <Text style={[styles.propertyTypeText, active && styles.propertyTypeTextActive]} numberOfLines={1}>
-                      {p.title}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={styles.reModalFooter}>
-              <TouchableOpacity style={styles.reModalSkipButton} onPress={skipRealEstateFilters}>
-                <Text style={styles.reModalSkipText}>نمایش همه املاک</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.reModalApplyButton} onPress={applyRealEstateFilters}>
-                <Text style={styles.reModalApplyText}>اعمال فیلتر</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 
@@ -534,76 +424,34 @@ const styles = StyleSheet.create({
   },
   citySelectorText: { flex: 1, color: "#fff", fontSize: 13.5, fontWeight: "600" },
 
-  sectionHeader: { paddingHorizontal: 4, paddingTop: 16, paddingBottom: 4 },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#1a1a1a" },
-  sectionHint: { fontSize: 11.5, color: "#9a9ea6", marginTop: 2 },
+  /* Deal type + property type filters (home page) */
+  filterTitle: { fontSize: 15, fontWeight: "700", color: "#1a1a1a", marginTop: 18, marginBottom: 10 },
 
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingTop: 14,
-    paddingBottom: 6,
-  },
-  categoryGridItem: { width: "25%", alignItems: "center", marginBottom: 18 },
-  categoryCircle: {
-    width: 54, height: 54, borderRadius: 27,
-    backgroundColor: "#e1f5ee",
-    justifyContent: "center", alignItems: "center",
-    marginBottom: 6,
-  },
-  categoryCircleActive: { backgroundColor: "#00a884" },
-  categoryLabel: { fontSize: 11.5, color: "#5f6570", fontWeight: "500", textAlign: "center" },
-  categoryLabelActive: { color: "#00a884", fontWeight: "700" },
-
-  activeFilterBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#f3fbf8",
-    borderWidth: 1,
-    borderColor: "#c7ebe0",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 4,
-  },
-  activeFilterText: { flex: 1, fontSize: 12.5, color: "#00806a", fontWeight: "600" },
-  activeFilterEdit: { fontSize: 12, color: "#00a884", fontWeight: "700" },
-
-  filterCardIconCircle: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: "#e1f5ee",
-    justifyContent: "center", alignItems: "center",
-  },
-
-  filterGroupLabel: { fontSize: 12, fontWeight: "600", color: "#9a9ea6", marginBottom: 8 },
-
-  segmentedRow: {
-    flexDirection: "row",
-    backgroundColor: "#f4f5f7",
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
-  },
-  segmentedItem: {
+  dealRow: { flexDirection: "row", gap: 10 },
+  dealCard: {
     flex: 1,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    paddingVertical: 11,
-    borderRadius: 9,
-  },
-  segmentedItemActive: {
-    backgroundColor: "#00a884",
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eef0f2",
     elevation: 2,
-    shadowColor: "#00a884",
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
-  segmentedText: { fontSize: 12.5, color: "#5f6570", fontWeight: "600" },
-  segmentedTextActive: { color: "#fff" },
+  dealCardActive: { backgroundColor: "#00a884", borderColor: "#00a884" },
+  dealIconWrap: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: "#e1f5ee",
+    justifyContent: "center", alignItems: "center",
+    marginBottom: 8,
+  },
+  dealIconWrapActive: { backgroundColor: "rgba(255,255,255,0.22)" },
+  dealText: { fontSize: 14, fontWeight: "700", color: "#1a1a1a" },
+  dealTextActive: { color: "#fff" },
 
   propertyTypeGrid: { flexDirection: "row", gap: 8 },
   propertyTypeCard: {
@@ -629,6 +477,16 @@ const styles = StyleSheet.create({
   propertyTypeText: { fontSize: 10.5, color: "#5f6570", fontWeight: "600", textAlign: "center" },
   propertyTypeTextActive: { color: "#00806a" },
 
+  clearFilters: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    marginTop: 14,
+  },
+  clearFiltersText: { fontSize: 12.5, color: "#00a884", fontWeight: "600" },
+
+  /* City modal */
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
   modalSheet: {
     backgroundColor: "#fff",
@@ -644,34 +502,6 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 16, fontWeight: "700", color: "#1a1a1a", marginBottom: 14 },
   modalRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   modalRowText: { fontSize: 14.5, color: "#1a1a1a" },
-
-  reModalSheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-  },
-  reModalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 18,
-  },
-  reModalTitleRow: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  reModalTitle: { fontSize: 16, fontWeight: "700", color: "#1a1a1a" },
-  reModalSubtitle: { fontSize: 12, color: "#9a9ea6", marginTop: 2 },
-
-  reModalFooter: { flexDirection: "row", gap: 10, marginTop: 24 },
-  reModalSkipButton: {
-    flex: 1, alignItems: "center", justifyContent: "center",
-    borderWidth: 1, borderColor: "#e4e6ea", borderRadius: 12, paddingVertical: 14,
-  },
-  reModalSkipText: { fontSize: 13.5, color: "#5f6570", fontWeight: "600" },
-  reModalApplyButton: {
-    flex: 1.4, alignItems: "center", justifyContent: "center",
-    backgroundColor: "#00a884", borderRadius: 12, paddingVertical: 14,
-  },
-  reModalApplyText: { fontSize: 14, color: "#fff", fontWeight: "700" },
 
   listContent: { paddingHorizontal: 16, paddingBottom: 16 },
   resultsCount: { fontSize: 13, color: "#9a9ea6", marginTop: 8, marginBottom: 12, fontWeight: "500" },
