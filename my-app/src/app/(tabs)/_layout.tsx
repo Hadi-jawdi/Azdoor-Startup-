@@ -1,17 +1,14 @@
 
 
+
 // import { Tabs } from "expo-router";
 // import { View, StyleSheet, Platform } from "react-native";
 // import { Ionicons } from "@expo/vector-icons";
 // import { LinearGradient } from "expo-linear-gradient";
 // import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// // Colors inlined here (no shared theme file in this project) — keep these in
-// // sync by hand with any other screens using the same brand palette.
 // const BRAND = "#1F3F66";
 // const BRAND_LIGHT = "#E3EAF2";
-// const ACCENT = "#D9A441";
-// const ACCENT_DARK = "#B5842E";
 // const TEXT_MUTED = "#9A9FA8";
 
 // function TabIcon({
@@ -23,7 +20,11 @@
 // }) {
 //   return (
 //     <View style={[styles.iconPill, focused && styles.iconPillActive]}>
-//       <Ionicons name={name} size={21} color={focused ? BRAND : TEXT_MUTED} />
+//       <Ionicons
+//         name={name}
+//         size={21}
+//         color={focused ? BRAND : TEXT_MUTED}
+//       />
 //     </View>
 //   );
 // }
@@ -37,233 +38,48 @@
 //         headerShown: false,
 //         tabBarActiveTintColor: BRAND,
 //         tabBarInactiveTintColor: TEXT_MUTED,
-//         tabBarShowLabel: true,
+//         tabBarShowLabel: false,
 //         tabBarLabelStyle: styles.tabLabel,
 //         tabBarStyle: [
 //           styles.tabBar,
-//           { height: 64 + insets.bottom * 0.5, paddingBottom: Math.max(insets.bottom * 0.5, 8) },
+//           {
+//             height: 64 + insets.bottom * 0.5,
+//             paddingBottom: Math.max(insets.bottom * 0.5, 8),
+//           },
 //         ],
 //         tabBarItemStyle: styles.tabItem,
 //       }}
 //     >
+//       {/* 1. All listings — rightmost */}
 //       <Tabs.Screen
 //         name="index"
 //         options={{
-//           title: "همه آگهی ها",
+//           title: "همه آگهی‌ها",
 //           tabBarIcon: ({ focused }) => (
-//             <TabIcon name={focused ? "home" : "home-outline"} focused={focused} />
+//             <TabIcon
+//               name={focused ? "home" : "home-outline"}
+//               focused={focused}
+//             />
 //           ),
 //         }}
 //       />
 
+//       {/* 2. Videos */}
 //       <Tabs.Screen
 //         name="reels"
 //         options={{
 //           title: "ویدیوها",
 //           tabBarIcon: ({ focused }) => (
-//             <TabIcon name={focused ? "play-circle" : "play-circle-outline"} focused={focused} />
+//             <TabIcon
+//               name={focused ? "play-circle" : "play-circle-outline"}
+//               focused={focused}
+//             />
 //           ),
+//           tabBarStyle: { display: "none" },
 //         }}
 //       />
 
-//       <Tabs.Screen
-//         name="post"
-//         options={{
-//           title: "",
-//           tabBarLabel: () => null,
-//           tabBarIcon: ({ focused }) => (
-//             <View style={styles.postButtonWrap}>
-//               <View style={styles.postButtonGlow} />
-//               <LinearGradient
-               
-//                colors={["#00d6a8", "#00a884", "#00806a"]}
-//                 locations={[0, 0.5, 1]}
-//                 start={{ x: 0.2, y: 0 }}
-//                 end={{ x: 0.9, y: 1 }}
-//                 style={[styles.postButton, focused && styles.postButtonActive]}
-//                 // colors={["#00d6a8", "#00a884", "#00806a"]}
-//                 // locations={[0, 0.5, 1]}
-//                 // start={{ x: 0.2, y: 0 }}
-//                 // end={{ x: 0.9, y: 1 }}
-//                 // style={[styles.postButton, focused && styles.postButtonActive]}
-//               >
-//                 <View style={styles.postButtonHighlight} />
-//                 <Ionicons name="add" size={30} color="#fff" />
-//               </LinearGradient>
-//             </View>
-//           ),
-//         }}
-//       />
-
-//       <Tabs.Screen
-//         name="categories"
-//         options={{
-//           title: "دسته‌بندی",
-//           tabBarIcon: ({ focused }) => (
-//             <TabIcon name={focused ? "grid" : "grid-outline"} focused={focused} />
-//           ),
-//         }}
-//       />
-
-//       <Tabs.Screen
-//         name="favorites"
-//         options={{
-//           href: null, // hidden from the tab bar, route still works via router.push
-//         }}
-//       />
-
-//       <Tabs.Screen
-//         name="profile"
-//         options={{
-//           title: "پروفایل",
-//           tabBarIcon: ({ focused }) => (
-//             <TabIcon name={focused ? "person" : "person-outline"} focused={focused} />
-//           ),
-//         }}
-//       />
-//     </Tabs>
-//   );
-// }
-
-// const styles = {
-//   tabBar: {
-//     position: "absolute" as const,
-//     flexDirection: "row-reverse" as const, // force RTL order — the bar wasn't auto-mirroring on its own
-//     backgroundColor: "#fff",
-//     borderTopWidth: 0,
-//     elevation: 12,
-//     shadowColor: "#000",
-//     shadowOpacity: 0.08,
-//     shadowRadius: 14,
-//     shadowOffset: { width: 0, height: -4 },
-//     ...(Platform.OS === "android" ? { elevation: 12 } : {}),
-//   },
-//   tabItem: { paddingTop: 6 },
-//   tabLabel: { fontSize: 11, fontWeight: "600" as const, marginTop: 2 },
-
-//   iconPill: {
-//     width: 46,
-//     height: 30,
-//     borderRadius: 14,
-//     justifyContent: "center" as const,
-//     alignItems: "center" as const,
-//   },
-//   iconPillActive: {
-//     backgroundColor: BRAND_LIGHT,
-//   },
-
-//   postButtonWrap: {
-//     alignItems: "center" as const,
-//     justifyContent: "center" as const,
-//   },
-//   postButtonGlow: {
-//     position: "absolute" as const,
-//     top: -32,
-//     width: 76,
-//     height: 76,
-//     borderRadius: 38,
-//     backgroundColor: "rgba(217,164,65,0.28)",
-//   },
-//   postButton: {
-//     width: 58,
-//     height: 58,
-//     borderRadius: 29,
-//     marginTop: -28,
-//     justifyContent: "center" as const,
-//     alignItems: "center" as const,
-//     shadowColor: ACCENT_DARK,
-//     shadowOpacity: 0.5,
-//     shadowRadius: 12,
-//     shadowOffset: { width: 0, height: 7 },
-//     elevation: 9,
-//     borderWidth: 3,
-//     borderColor: "#fff",
-//     overflow: "hidden" as const,
-//   },
-//   postButtonHighlight: {
-//     position: "absolute" as const,
-//     top: -14,
-//     left: -6,
-//     width: 40,
-//     height: 40,
-//     borderRadius: 20,
-//     backgroundColor: "rgba(255,255,255,0.35)",
-//   },
-//   postButtonActive: {
-//     transform: [{ scale: 1.06 }],
-//   },
-// };
-// import { Tabs } from "expo-router";
-// import { View, StyleSheet, Platform } from "react-native";
-// import { Ionicons } from "@expo/vector-icons";
-// import { LinearGradient } from "expo-linear-gradient";
-// import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// // Colors inlined here (no shared theme file in this project) — keep these in
-// // sync by hand with any other screens using the same brand palette.
-// const BRAND = "#1F3F66";
-// const BRAND_LIGHT = "#E3EAF2";
-// const TEXT_MUTED = "#9A9FA8";
-
-// function TabIcon({
-//   name,
-//   focused,
-// }: {
-//   name: keyof typeof Ionicons.glyphMap;
-//   focused: boolean;
-// }) {
-//   return (
-//     <View style={[styles.iconPill, focused && styles.iconPillActive]}>
-//       <Ionicons name={name} size={21} color={focused ? BRAND : TEXT_MUTED} />
-//     </View>
-//   );
-// }
-
-// export default function TabsLayout() {
-//   const insets = useSafeAreaInsets();
-
-//   return (
-//     <Tabs
-//       screenOptions={{
-//         headerShown: false,
-//         tabBarActiveTintColor: BRAND,
-//         tabBarInactiveTintColor: TEXT_MUTED,
-//         tabBarShowLabel: true,
-//         tabBarLabelStyle: styles.tabLabel,
-//         tabBarStyle: [
-//           styles.tabBar,
-//           { height: 64 + insets.bottom * 0.5, paddingBottom: Math.max(insets.bottom * 0.5, 8) },
-//         ],
-//         tabBarItemStyle: styles.tabItem,
-//       }}
-//     >
-//       <Tabs.Screen
-//         name="profile"
-//         options={{
-//           title: "پروفایل",
-//           tabBarIcon: ({ focused }) => (
-//             <TabIcon name={focused ? "person" : "person-outline"} focused={focused} />
-//           ),
-//         }}
-//       />
-
-//       <Tabs.Screen
-//         name="favorites"
-//         options={{
-//           href: null, // hidden from the tab bar, route still works via router.push
-//         }}
-//       />
-
-//       <Tabs.Screen
-//         name="categories"
-//         options={{
-//           title: "دسته‌بندی",
-//           tabBarIcon: ({ focused }) => (
-//             <TabIcon name={focused ? "grid" : "grid-outline"} focused={focused} />
-//           ),
-//         }}
-//       />
-
+//       {/* 3. Create listing — center */}
 //       <Tabs.Screen
 //         name="post"
 //         options={{
@@ -276,44 +92,62 @@
 //                 locations={[0, 0.5, 1]}
 //                 start={{ x: 0.2, y: 0 }}
 //                 end={{ x: 0.9, y: 1 }}
-//                 style={[styles.postButton, focused && styles.postButtonActive]}
+//                 style={[
+//                   styles.postButton,
+//                   focused && styles.postButtonActive,
+//                 ]}
 //               >
 //                 <View style={styles.postButtonHighlight} />
 //                 <Ionicons name="add" size={30} color="#fff" />
 //               </LinearGradient>
 //             </View>
 //           ),
-//           tabBarStyle: { display: "none" }, // form screen, no tab bar underneath it
+//           tabBarStyle: { display: "none" },
 //         }}
 //       />
 
+//       {/* 4. Categories */}
 //       <Tabs.Screen
-//         name="reels"
+//         name="categories"
 //         options={{
-//           title: "ویدیوها",
+//           title: "دسته‌بندی",
 //           tabBarIcon: ({ focused }) => (
-//             <TabIcon name={focused ? "play-circle" : "play-circle-outline"} focused={focused} />
+//             <TabIcon
+//               name={focused ? "grid" : "grid-outline"}
+//               focused={focused}
+//             />
 //           ),
-//           tabBarStyle: { display: "none" }, // full-screen video, no tab bar overlapping it
 //         }}
 //       />
 
+//       {/* 5. Profile — leftmost */}
 //       <Tabs.Screen
-//         name="index"
+//         name="profile"
 //         options={{
-//           title: "همه آگهی ها",
+//           title: "پروفایل",
 //           tabBarIcon: ({ focused }) => (
-//             <TabIcon name={focused ? "home" : "home-outline"} focused={focused} />
+//             <TabIcon
+//               name={focused ? "person" : "person-outline"}
+//               focused={focused}
+//             />
 //           ),
+//         }}
+//       />
+
+//       {/* Hidden route: still accessible using router.push */}
+//       <Tabs.Screen
+//         name="favorites"
+//         options={{
+//           href: null,
 //         }}
 //       />
 //     </Tabs>
 //   );
 // }
 
-// const styles = {
+// const styles = StyleSheet.create({
 //   tabBar: {
-//     position: "absolute" as const,
+//     position: "absolute",
 //     backgroundColor: "#fff",
 //     borderTopWidth: 0,
 //     elevation: 12,
@@ -323,31 +157,35 @@
 //     shadowOffset: { width: 0, height: -4 },
 //     ...(Platform.OS === "android" ? { elevation: 12 } : {}),
 //   },
-//   tabItem: { paddingTop: 6 },
-//   tabLabel: { fontSize: 11, fontWeight: "600" as const, marginTop: 2 },
-
+//   tabItem: {
+//     paddingTop: 6,
+//   },
+//   tabLabel: {
+//     fontSize: 11,
+//     fontWeight: "600",
+//     marginTop: 2,
+//   },
 //   iconPill: {
 //     width: 46,
 //     height: 30,
 //     borderRadius: 14,
-//     justifyContent: "center" as const,
-//     alignItems: "center" as const,
+//     justifyContent: "center",
+//     alignItems: "center",
 //   },
 //   iconPillActive: {
 //     backgroundColor: BRAND_LIGHT,
 //   },
-
 //   postButtonWrap: {
-//     alignItems: "center" as const,
-//     justifyContent: "center" as const,
+//     alignItems: "center",
+//     justifyContent: "center",
 //   },
 //   postButton: {
 //     width: 58,
 //     height: 58,
 //     borderRadius: 29,
 //     marginTop: -28,
-//     justifyContent: "center" as const,
-//     alignItems: "center" as const,
+//     justifyContent: "center",
+//     alignItems: "center",
 //     shadowColor: "#00806a",
 //     shadowOpacity: 0.5,
 //     shadowRadius: 12,
@@ -355,10 +193,10 @@
 //     elevation: 9,
 //     borderWidth: 3,
 //     borderColor: "#fff",
-//     overflow: "hidden" as const,
+//     overflow: "hidden",
 //   },
 //   postButtonHighlight: {
-//     position: "absolute" as const,
+//     position: "absolute",
 //     top: -14,
 //     left: -6,
 //     width: 40,
@@ -369,10 +207,9 @@
 //   postButtonActive: {
 //     transform: [{ scale: 1.06 }],
 //   },
-// };
+// });
 
-
-import { Tabs } from "expo-router";
+import { Tabs, router } from "expo-router";
 import { View, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -409,7 +246,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: BRAND,
         tabBarInactiveTintColor: TEXT_MUTED,
-        tabBarShowLabel: true,
+        tabBarShowLabel: false,
         tabBarLabelStyle: styles.tabLabel,
         tabBarStyle: [
           styles.tabBar,
@@ -477,17 +314,23 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 4. Categories */}
+
       <Tabs.Screen
-        name="categories"
+        name="messages"
         options={{
-          title: "دسته‌بندی",
+          title: "پیام‌ها",
           tabBarIcon: ({ focused }) => (
             <TabIcon
-              name={focused ? "grid" : "grid-outline"}
+              name={focused ? "chatbubbles" : "chatbubbles-outline"}
               focused={focused}
             />
           ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push("/conversations");
+          },
         }}
       />
 

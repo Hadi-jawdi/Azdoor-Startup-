@@ -228,9 +228,6 @@ export default function Home() {
           </View>
 
           <View style={styles.brandRight}>
-            <TouchableOpacity style={styles.iconButton} onPress={() => router.push("/conversations")}>
-              <Ionicons name="chatbubbles-outline" size={19} color="#fff" />
-            </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={() => router.push("/profile")}>
               <Ionicons name={user ? "person" : "person-outline"} size={18} color="#fff" />
             </TouchableOpacity>
