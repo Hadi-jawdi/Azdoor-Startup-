@@ -1,59 +1,157 @@
 
 // import { useEffect, useRef, useState } from "react";
-// import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Share, Linking, Alert } from "react-native";
+// import {
+//   View,
+//   Text,
+//   TouchableOpacity,
+//   StyleSheet,
+//   Dimensions,
+//   Share,
+//   Linking,
+//   Alert,
+//   Pressable,
+//   Animated,
+//   ScrollView,
+// } from "react-native";
 // import { useVideoPlayer, VideoView } from "expo-video";
 // import { router } from "expo-router";
 // import { Ionicons } from "@expo/vector-icons";
 // import { LinearGradient } from "expo-linear-gradient";
+// import { useSafeAreaInsets } from "react-native-safe-area-context";
 // import { useAuth } from "../context/AuthContext";
 // import { toggleFavorite } from "../utils/listings";
 // import { startConversation } from "../utils/chat";
 
 // const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
+// const APP_NAME = "ازدور";
+// const PREVIEW_WORDS = 1; // words of the description shown before "more"
+
+// // Sound is ON by default. If the user mutes one reel, the choice is
+// // remembered for the next reels (shared by all cards).
+// let GLOBAL_MUTED = false;
+
 // export default function VideoReelCard({
 //   item,
 //   isActive,
 //   onToggleFavorite,
 // }: {
-//   item: any; // same Listing shape as ListingCard's `item`, plus `video`
+//   item: any;
 //   isActive: boolean;
 //   onToggleFavorite?: (id: number, favorited: boolean) => void;
 // }) {
 //   const { user, token } = useAuth();
+//   const insets = useSafeAreaInsets();
+
 //   const [favorited, setFavorited] = useState(!!item.is_favorited);
 //   const [busy, setBusy] = useState(false);
-//   const [muted, setMuted] = useState(true);
+//   const [muted, setMuted] = useState(GLOBAL_MUTED);
+//   const [showDescription, setShowDescription] = useState(false);
+
+//   const lastTap = useRef(0);
+//   const tapTimer = useRef<any>(null);
+//   const heartScale = useRef(new Animated.Value(0)).current;
 
 //   const player = useVideoPlayer(item.video, (p) => {
 //     p.loop = true;
-//     p.muted = true;
+//     p.muted = GLOBAL_MUTED;
 //   });
 
+//   /* PLAY / PAUSE (sound follows the saved mute choice) */
 //   useEffect(() => {
 //     if (isActive) {
+//       player.muted = GLOBAL_MUTED;
+//       setMuted(GLOBAL_MUTED);
 //       player.play();
 //     } else {
 //       player.pause();
 //       player.currentTime = 0;
+//       setShowDescription(false);
 //     }
 //   }, [isActive, player]);
 
+//   useEffect(() => {
+//     return () => {
+//       if (tapTimer.current) clearTimeout(tapTimer.current);
+//     };
+//   }, []);
+
+//   /* MUTE */
 //   const toggleMute = () => {
 //     const next = !muted;
+//     GLOBAL_MUTED = next;
 //     player.muted = next;
 //     setMuted(next);
 //   };
 
-//   const handleFavorite = async () => {
+//   /* HEART ANIMATION */
+//   const animateHeart = () => {
+//     heartScale.setValue(0);
+
+//     Animated.sequence([
+//       Animated.spring(heartScale, {
+//         toValue: 1,
+//         friction: 4,
+//         tension: 100,
+//         useNativeDriver: true,
+//       }),
+//       Animated.delay(400),
+//       Animated.timing(heartScale, {
+//         toValue: 0,
+//         duration: 200,
+//         useNativeDriver: true,
+//       }),
+//     ]).start();
+//   };
+
+//   /*
+//    * VIDEO TAP
+//    * Single tap  = mute / unmute (after a short wait, so a double tap never mutes)
+//    * Double tap  = like (never removes an existing like)
+//    */
+//   const handleVideoPress = () => {
+//     const now = Date.now();
+
+//     if (now - lastTap.current < 300) {
+//       if (tapTimer.current) {
+//         clearTimeout(tapTimer.current);
+//         tapTimer.current = null;
+//       }
+//       lastTap.current = 0;
+
+//       if (!favorited) {
+//         handleFavorite(true);
+//       } else {
+//         animateHeart();
+//       }
+//       return;
+//     }
+
+//     lastTap.current = now;
+//     tapTimer.current = setTimeout(() => {
+//       tapTimer.current = null;
+//       toggleMute();
+//     }, 300);
+//   };
+
+//   /* FAVORITE / LIKE */
+//   const handleFavorite = async (fromDoubleTap = false) => {
 //     if (!user) {
 //       router.push("/profile");
 //       return;
 //     }
+
 //     if (busy) return;
+
 //     const next = !favorited;
 //     setFavorited(next);
+
+//     if (next && fromDoubleTap) {
+//       animateHeart();
+//     }
+
 //     setBusy(true);
+
 //     try {
 //       await toggleFavorite(item.id, token);
 //       onToggleFavorite?.(item.id, next);
@@ -64,18 +162,25 @@
 //     }
 //   };
 
+//   /* CALL OWNER */
 //   const handleCall = () => {
-//     if (!item?.owner_phone) return;
+//     if (!item?.owner_phone) {
+//       Alert.alert("شماره تماس موجود نیست", "این آگهی شماره تماس ندارد.");
+//       return;
+//     }
+
 //     Linking.openURL(`tel:${item.owner_phone}`).catch(() =>
 //       Alert.alert("خطا", "امکان برقراری تماس وجود ندارد.")
 //     );
 //   };
 
+//   /* MESSAGE OWNER */
 //   const handleMessage = async () => {
 //     if (!user) {
 //       router.push("/profile");
 //       return;
 //     }
+
 //     try {
 //       const conversation = await startConversation(item.id, token);
 //       router.push(`/chat/${conversation.id}`);
@@ -84,123 +189,483 @@
 //     }
 //   };
 
+//   /* SHARE */
 //   const handleShare = () => {
-//     Share.share({ message: `${item.title} — ${item.price}` }).catch(() => {});
+//     Share.share({
+//       message: `${item.title}\n${item.price}\n${item.location || ""}`,
+//     }).catch(() => {});
 //   };
+
+//   /* PROPERTY DETAILS */
+//   const handlePropertyPress = () => {
+//     // Change this route if your listing details screen uses another route.
+//     router.push(`/listing/${item.id}`);
+//   };
+
+//   // Short preview of the description (first words) + "more"
+//   const descWords = (item.description || "").trim().split(/\s+/).filter(Boolean);
+//   const hasMore = descWords.length > PREVIEW_WORDS;
+//   const preview = descWords.slice(0, PREVIEW_WORDS).join(" ");
 
 //   const isOwnListing = user && item.owner === user.id;
 
 //   return (
 //     <View style={styles.container}>
-//       <VideoView style={StyleSheet.absoluteFill} player={player} contentFit="cover" nativeControls={false} />
+//       {/* VIDEO */}
+//       <VideoView
+//         style={StyleSheet.absoluteFill}
+//         player={player}
+//         contentFit="cover"
+//         nativeControls={false}
+//       />
 
-//       <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={toggleMute} />
+//       {/* TAP AREA */}
+//       <Pressable style={StyleSheet.absoluteFill} onPress={handleVideoPress} />
 
-//       {muted && (
-//         <View style={styles.muteBadge}>
-//           <Ionicons name="volume-mute" size={16} color="#fff" />
-//         </View>
+//       {/* DIM LAYER while the caption is open (tap to close) */}
+//       {showDescription && (
+//         <Pressable
+//           style={styles.captionDim}
+//           onPress={() => setShowDescription(false)}
+//         />
 //       )}
 
-//       <View style={styles.actionRail} pointerEvents="box-none">
-//         {!isOwnListing && (
-//           <>
-//             <ActionButton icon="chatbubble-ellipses" label="پیام" onPress={handleMessage} />
-//             <ActionButton icon="call" label="تماس" onPress={handleCall} />
-//           </>
-//         )}
-//         <ActionButton
-//           icon={favorited ? "heart" : "heart-outline"}
-//           label="ذخیره"
-//           onPress={handleFavorite}
-//           active={favorited}
-//         />
-//         <ActionButton icon="share-social" label="اشتراک" onPress={handleShare} />
+//       {/* DOUBLE TAP HEART */}
+//       <Animated.View
+//         pointerEvents="none"
+//         style={[
+//           styles.bigHeart,
+//           {
+//             transform: [
+//               {
+//                 scale: heartScale.interpolate({
+//                   inputRange: [0, 1],
+//                   outputRange: [0.5, 1.2],
+//                 }),
+//               },
+//             ],
+//             opacity: heartScale,
+//           },
+//         ]}
+//       >
+//         <Ionicons name="heart" size={105} color="#fff" />
+//       </Animated.View>
+
+//       {/* TOP FADE (keeps the logo readable on bright videos) */}
+//       <LinearGradient
+//         pointerEvents="none"
+//         colors={["rgba(0,0,0,0.5)", "rgba(0,0,0,0)"]}
+//         style={[styles.topFade, { height: insets.top + 90 }]}
+//       />
+
+//       {/* TOP BAR */}
+//       <View style={[styles.topBar, { top: insets.top + 8 }]}>
+//         <Text style={styles.logo}>{APP_NAME}</Text>
+
+//         <TouchableOpacity
+//           style={styles.iconCircle}
+//           activeOpacity={0.7}
+//           onPress={toggleMute}
+//           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+//         >
+//           <Ionicons
+//             name={muted ? "volume-mute" : "volume-high"}
+//             size={20}
+//             color="#fff"
+//           />
+//         </TouchableOpacity>
 //       </View>
 
-//       <LinearGradient colors={["transparent", "rgba(0,0,0,0.85)"]} style={styles.bottomOverlay}>
-//         {!!item.owner_name && (
-//           <View style={styles.ownerRow}>
-//             <View style={styles.ownerAvatar}>
-//               <Text style={styles.ownerAvatarText}>{item.owner_name.trim().charAt(0)}</Text>
+//       {/* ACTION RAIL */}
+//       <View style={styles.actionRail}>
+//         <ActionButton
+//           icon={favorited ? "heart" : "heart-outline"}
+//           label={favorited ? "ذخیره شد" : "ذخیره"}
+//           active={favorited}
+//           onPress={() => handleFavorite(false)}
+//         />
+
+//         {!isOwnListing && (
+//           <ActionButton
+//             icon="chatbubble-ellipses-outline"
+//             label="پیام"
+//             onPress={handleMessage}
+//           />
+//         )}
+
+//         {!isOwnListing && (
+//           <ActionButton icon="call-outline" label="تماس" onPress={handleCall} />
+//         )}
+
+//         <ActionButton
+//           icon="paper-plane-outline"
+//           label="اشتراک"
+//           onPress={handleShare}
+//         />
+//       </View>
+
+//       {/* BOTTOM INFO */}
+//       <LinearGradient
+//         colors={[
+//           "transparent",
+//           "rgba(0,0,0,0.10)",
+//           "rgba(0,0,0,0.55)",
+//           "rgba(0,0,0,0.92)",
+//         ]}
+//         style={styles.bottomGradient}
+//         pointerEvents="box-none"
+//       >
+//         <View style={styles.bottomContent}>
+//           {/* OWNER */}
+//           {!!item.owner_name && (
+//             <View style={styles.ownerRow}>
+//               <View style={styles.ownerAvatar}>
+//                 <Text style={styles.avatarText}>
+//                   {item.owner_name.trim().charAt(0)}
+//                 </Text>
+//               </View>
+
+//               <View style={styles.ownerInfo}>
+//                 <Text style={styles.ownerName} numberOfLines={1}>
+//                   {item.owner_name}
+//                 </Text>
+//                 <Text style={styles.ownerSubtitle}>صاحب آگهی</Text>
+//               </View>
+
+//               {!isOwnListing && (
+//                 <TouchableOpacity
+//                   style={styles.messageButton}
+//                   activeOpacity={0.8}
+//                   onPress={handleMessage}
+//                 >
+//                   <Text style={styles.messageText}>پیام</Text>
+//                 </TouchableOpacity>
+//               )}
 //             </View>
-//             <Text style={styles.ownerName} numberOfLines={1}>{item.owner_name}</Text>
-//           </View>
-//         )}
-//         {item.deal_type_display && (
-//           <View style={styles.dealBadge}>
-//             <Text style={styles.dealBadgeText}>{item.deal_type_display}</Text>
-//           </View>
-//         )}
-//         <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-//         <View style={styles.priceRow}>
-//           <Ionicons name="pricetag" size={13} color="#fff" />
-//           <Text style={styles.price}>{item.price}</Text>
+//           )}
+
+//           {/* DEAL TYPE */}
+//           {!!item.deal_type_display && (
+//             <View style={styles.dealBadge}>
+//               <Text style={styles.dealBadgeText}>{item.deal_type_display}</Text>
+//             </View>
+//           )}
+
+//           {/* TITLE */}
+//           <TouchableOpacity activeOpacity={0.9} onPress={handlePropertyPress}>
+//             <Text style={styles.title} numberOfLines={2}>
+//               {item.title}
+//             </Text>
+//           </TouchableOpacity>
+
+//           {/* PRICE */}
+//           {!!item.price && (
+//             <View style={styles.priceRow}>
+//               <Ionicons name="pricetag" size={15} color="#fff" />
+//               <Text style={styles.price}>{item.price}</Text>
+//             </View>
+//           )}
+
+//           {/* LOCATION */}
+//           {!!item.location && (
+//             <View style={styles.locationRow}>
+//               <Ionicons
+//                 name="location-sharp"
+//                 size={14}
+//                 color="rgba(255,255,255,0.8)"
+//               />
+//               <Text style={styles.location} numberOfLines={1}>
+//                 {item.location}
+//               </Text>
+//             </View>
+//           )}
+
+//           {/* DESCRIPTION: only the first words + "more" */}
+//           {!!item.description && (
+//             <View style={styles.captionWrap}>
+//               {showDescription ? (
+//                 <ScrollView
+//                   style={styles.captionScroll}
+//                   nestedScrollEnabled
+//                   showsVerticalScrollIndicator={false}
+//                 >
+//                   <Text style={styles.caption}>
+//                     {item.description}
+//                     {hasMore && (
+//                       <Text
+//                         style={styles.captionMore}
+//                         onPress={() => setShowDescription(false)}
+//                       >
+//                         {"  کمتر"}
+//                       </Text>
+//                     )}
+//                   </Text>
+//                 </ScrollView>
+//               ) : (
+//                 <Text style={styles.caption}>
+//                   {preview}
+//                   {hasMore && (
+//                     <Text
+//                       style={styles.captionMore}
+//                       onPress={() => setShowDescription(true)}
+//                     >
+//                       {" … بیشتر"}
+//                     </Text>
+//                   )}
+//                 </Text>
+//               )}
+//             </View>
+//           )}
 //         </View>
-//         {!!item.location && (
-//           <View style={styles.locationRow}>
-//             <Ionicons name="location-sharp" size={12} color="rgba(255,255,255,0.75)" />
-//             <Text style={styles.location}>{item.location}</Text>
-//           </View>
-//         )}
 //       </LinearGradient>
 //     </View>
 //   );
 // }
 
-// function ActionButton({ icon, label, onPress, active }: { icon: any; label: string; onPress: () => void; active?: boolean }) {
+// /* ACTION BUTTON */
+
+// function ActionButton({
+//   icon,
+//   label,
+//   onPress,
+//   active,
+// }: {
+//   icon: any;
+//   label: string;
+//   onPress: () => void;
+//   active?: boolean;
+// }) {
 //   return (
-//     <TouchableOpacity style={styles.actionButton} onPress={onPress} activeOpacity={0.65}>
-//       <View style={[styles.actionIconCircle, active && styles.actionIconCircleActive]}>
-//         <Ionicons name={icon} size={23} color={active ? "#e74c3c" : "#fff"} />
+//     <TouchableOpacity
+//       style={styles.actionButton}
+//       onPress={onPress}
+//       activeOpacity={0.7}
+//     >
+//       <View style={styles.actionIcon}>
+//         <Ionicons
+//           name={icon}
+//           size={25}
+//           color={active ? "#ff3040" : "#fff"}
+//         />
 //       </View>
 //       <Text style={styles.actionLabel}>{label}</Text>
 //     </TouchableOpacity>
 //   );
 // }
 
+// /* STYLES */
+
 // const styles = StyleSheet.create({
-//   container: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: "#000" },
-//   muteBadge: {
-//     position: "absolute", top: 60, alignSelf: "center",
-//     backgroundColor: "rgba(0,0,0,0.4)", borderRadius: 16, padding: 6,
+//   container: {
+//     width: SCREEN_WIDTH,
+//     height: SCREEN_HEIGHT,
+//     backgroundColor: "#000",
 //   },
-//   actionRail: { position: "absolute", right: 12, bottom: 150, alignItems: "center", gap: 22 },
-//   actionButton: { alignItems: "center", gap: 5 },
-//   actionIconCircle: {
-//     width: 48, height: 48, borderRadius: 24,
-//     backgroundColor: "rgba(255,255,255,0.16)",
-//     borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
-//     justifyContent: "center", alignItems: "center",
-//     shadowColor: "#000", shadowOpacity: 0.3, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
-//     elevation: 4,
+
+//   /* Top */
+//   topFade: {
+//     position: "absolute",
+//     top: 0,
+//     left: 0,
+//     right: 0,
+//     zIndex: 15,
 //   },
-//   actionIconCircleActive: { backgroundColor: "rgba(231,76,60,0.22)", borderColor: "rgba(231,76,60,0.45)" },
-//   actionLabel: { color: "#fff", fontSize: 11, fontWeight: "600" },
-//   bottomOverlay: { position: "absolute", left: 0, right: 0, bottom: 0, paddingTop: 70, paddingBottom: 28, paddingHorizontal: 16 },
-//   ownerRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
+//   topBar: {
+//     position: "absolute",
+//     left: 16,
+//     right: 16,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     zIndex: 20,
+//   },
+//   logo: {
+//     color: "#fff",
+//     fontSize: 22,
+//     fontWeight: "800",
+//     textShadowColor: "rgba(0,0,0,0.4)",
+//     textShadowRadius: 5,
+//   },
+//   iconCircle: {
+//     width: 38,
+//     height: 38,
+//     borderRadius: 19,
+//     backgroundColor: "rgba(0,0,0,0.35)",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+
+//   /* Heart */
+//   bigHeart: {
+//     position: "absolute",
+//     top: SCREEN_HEIGHT / 2 - 52,
+//     left: SCREEN_WIDTH / 2 - 52,
+//     zIndex: 30,
+//     shadowColor: "#000",
+//     shadowOpacity: 0.35,
+//     shadowRadius: 10,
+//   },
+
+//   /* Action rail */
+//   actionRail: {
+//     position: "absolute",
+//     left: 10,
+//     bottom: 205,
+//     alignItems: "center",
+//     gap: 16,
+//     zIndex: 20,
+//   },
+//   actionButton: {
+//     alignItems: "center",
+//     justifyContent: "center",
+//     minWidth: 52,
+//   },
+//   actionIcon: {
+//     width: 46,
+//     height: 46,
+//     borderRadius: 23,
+//     backgroundColor: "rgba(0,0,0,0.28)",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   actionLabel: {
+//     color: "#fff",
+//     fontSize: 10.5,
+//     fontWeight: "600",
+//     marginTop: 4,
+//     textShadowColor: "rgba(0,0,0,0.7)",
+//     textShadowRadius: 4,
+//   },
+
+//   /* Bottom */
+//   bottomGradient: {
+//     position: "absolute",
+//     left: 0,
+//     right: 0,
+//     bottom: 0,
+//     minHeight: 370,
+//     justifyContent: "flex-end",
+//     zIndex: 10,
+//   },
+//   bottomContent: {
+//     paddingHorizontal: 16,
+//     paddingBottom: 40,
+//     // Leave space on the left for the action buttons.
+//     paddingLeft: 78,
+//     alignItems: "flex-start",
+//   },
+
+//   /* Owner (glass card) */
+//   ownerRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     width: "100%",
+//     marginBottom: 14,
+//     padding: 8,
+//     borderRadius: 16,
+//     backgroundColor: "rgba(255,255,255,0.14)",
+//     borderWidth: StyleSheet.hairlineWidth,
+//     borderColor: "rgba(255,255,255,0.3)",
+//   },
 //   ownerAvatar: {
-//     width: 30, height: 30, borderRadius: 15,
-//     backgroundColor: "#00a884", justifyContent: "center", alignItems: "center",
-//     borderWidth: 1.5, borderColor: "rgba(255,255,255,0.6)",
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     backgroundColor: "#00a884",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     borderWidth: 1.5,
+//     borderColor: "rgba(255,255,255,0.9)",
+//     marginEnd: 10,
 //   },
-//   ownerAvatarText: { color: "#fff", fontSize: 13, fontWeight: "700" },
-//   ownerName: { color: "#fff", fontSize: 13.5, fontWeight: "700" },
+//   avatarText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+//   ownerInfo: { flex: 1, alignItems: "flex-start", marginEnd: 8 },
+//   ownerName: {
+//     color: "#fff",
+//     fontSize: 14,
+//     fontWeight: "700",
+//   },
+//   ownerSubtitle: {
+//     color: "rgba(255,255,255,0.7)",
+//     fontSize: 11,
+//     marginTop: 2,
+//   },
+//   messageButton: {
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderRadius: 16,
+//     backgroundColor: "#fff",
+//   },
+//   messageText: { color: "#00806a", fontSize: 12.5, fontWeight: "700" },
+
+//   /* Deal badge */
 //   dealBadge: {
-//     alignSelf: "flex-start", backgroundColor: "#00a884",
-//     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginBottom: 8,
+//     alignSelf: "flex-start",
+//     backgroundColor: "#00a884",
+//     paddingHorizontal: 10,
+//     paddingVertical: 4,
+//     borderRadius: 6,
+//     marginBottom: 8,
 //   },
-//   dealBadgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-//   title: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 6, lineHeight: 21 },
-//   priceRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-//   price: { color: "#fff", fontSize: 15, fontWeight: "700" },
-//   locationRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-//   location: { color: "rgba(255,255,255,0.75)", fontSize: 12 },
-// }); 
+//   dealBadgeText: { color: "#fff", fontSize: 11.5, fontWeight: "700" },
 
+//   /* Title / price / location */
+//   title: {
+//     color: "#fff",
+//     fontSize: 18,
+//     lineHeight: 25,
+//     fontWeight: "700",
+//     marginBottom: 8,
+//     textShadowColor: "rgba(0,0,0,0.7)",
+//     textShadowRadius: 5,
+//   },
+//   priceRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     marginBottom: 6,
+//     gap: 6,
+//   },
+//   price: {
+//     color: "#fff",
+//     fontSize: 16,
+//     fontWeight: "800",
+//     textShadowColor: "rgba(0,0,0,0.6)",
+//     textShadowRadius: 4,
+//   },
+//   locationRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     marginBottom: 6,
+//     gap: 4,
+//   },
+//   location: {
+//     color: "rgba(255,255,255,0.85)",
+//     fontSize: 12.5,
+//     flexShrink: 1,
+//   },
 
-
-
+//   /* Caption (Instagram style) */
+//   captionDim: {
+//     ...StyleSheet.absoluteFillObject,
+//     backgroundColor: "rgba(0,0,0,0.45)",
+//     zIndex: 5,
+//   },
+//   captionWrap: { width: "100%", marginTop: 6 },
+//   caption: {
+//     color: "rgba(255,255,255,0.92)",
+//     fontSize: 13.5,
+//     lineHeight: 21,
+//     textShadowColor: "rgba(0,0,0,0.5)",
+//     textShadowRadius: 3,
+//   },
+//   captionScroll: { maxHeight: 150 },
+//   captionMore: {
+//     color: "rgba(255,255,255,0.65)",
+//     fontSize: 13,
+//     fontWeight: "600",
+//     marginTop: 2,
+//   },
+// });
 import { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -213,17 +678,24 @@ import {
   Alert,
   Pressable,
   Animated,
+  ScrollView,
 } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
 import { toggleFavorite } from "../utils/listings";
 import { startConversation } from "../utils/chat";
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } =
-  Dimensions.get("window");
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
+
+const APP_NAME = "ازدور";
+
+// Sound is ON by default. If the user mutes one reel, the choice is
+// remembered for the next reels (shared by all cards).
+let GLOBAL_MUTED = false;
 
 export default function VideoReelCard({
   item,
@@ -235,55 +707,50 @@ export default function VideoReelCard({
   onToggleFavorite?: (id: number, favorited: boolean) => void;
 }) {
   const { user, token } = useAuth();
+  const insets = useSafeAreaInsets();
 
-  const [favorited, setFavorited] = useState(
-    !!item.is_favorited
-  );
-
+  const [favorited, setFavorited] = useState(!!item.is_favorited);
   const [busy, setBusy] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(GLOBAL_MUTED);
   const [showDescription, setShowDescription] = useState(false);
 
   const lastTap = useRef(0);
-
-  const heartScale = useRef(
-    new Animated.Value(0)
-  ).current;
+  const tapTimer = useRef<any>(null);
+  const heartScale = useRef(new Animated.Value(0)).current;
 
   const player = useVideoPlayer(item.video, (p) => {
     p.loop = true;
-    p.muted = true;
+    p.muted = GLOBAL_MUTED;
   });
 
-  /*
-   * PLAY / PAUSE
-   */
-
+  /* PLAY / PAUSE (sound follows the saved mute choice) */
   useEffect(() => {
     if (isActive) {
+      player.muted = GLOBAL_MUTED;
+      setMuted(GLOBAL_MUTED);
       player.play();
     } else {
       player.pause();
       player.currentTime = 0;
+      setShowDescription(false);
     }
   }, [isActive, player]);
 
-  /*
-   * MUTE
-   */
+  useEffect(() => {
+    return () => {
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+    };
+  }, []);
 
+  /* MUTE */
   const toggleMute = () => {
     const next = !muted;
-
+    GLOBAL_MUTED = next;
     player.muted = next;
-
     setMuted(next);
   };
 
-  /*
-   * HEART ANIMATION
-   */
-
+  /* HEART ANIMATION */
   const animateHeart = () => {
     heartScale.setValue(0);
 
@@ -294,9 +761,7 @@ export default function VideoReelCard({
         tension: 100,
         useNativeDriver: true,
       }),
-
       Animated.delay(400),
-
       Animated.timing(heartScale, {
         toValue: 0,
         duration: 200,
@@ -307,30 +772,36 @@ export default function VideoReelCard({
 
   /*
    * VIDEO TAP
-   *
-   * Single tap = mute/unmute
-   * Double tap = like
+   * Single tap  = mute / unmute (after a short wait, so a double tap never mutes)
+   * Double tap  = like (never removes an existing like)
    */
-
   const handleVideoPress = () => {
     const now = Date.now();
 
     if (now - lastTap.current < 300) {
-      handleFavorite(true);
-    } else {
-      toggleMute();
+      if (tapTimer.current) {
+        clearTimeout(tapTimer.current);
+        tapTimer.current = null;
+      }
+      lastTap.current = 0;
+
+      if (!favorited) {
+        handleFavorite(true);
+      } else {
+        animateHeart();
+      }
+      return;
     }
 
     lastTap.current = now;
+    tapTimer.current = setTimeout(() => {
+      tapTimer.current = null;
+      toggleMute();
+    }, 300);
   };
 
-  /*
-   * FAVORITE / LIKE
-   */
-
-  const handleFavorite = async (
-    fromDoubleTap = false
-  ) => {
+  /* FAVORITE / LIKE */
+  const handleFavorite = async (fromDoubleTap = false) => {
     if (!user) {
       router.push("/profile");
       return;
@@ -339,7 +810,6 @@ export default function VideoReelCard({
     if (busy) return;
 
     const next = !favorited;
-
     setFavorited(next);
 
     if (next && fromDoubleTap) {
@@ -350,11 +820,7 @@ export default function VideoReelCard({
 
     try {
       await toggleFavorite(item.id, token);
-
-      onToggleFavorite?.(
-        item.id,
-        next
-      );
+      onToggleFavorite?.(item.id, next);
     } catch {
       setFavorited(!next);
     } finally {
@@ -362,34 +828,19 @@ export default function VideoReelCard({
     }
   };
 
-  /*
-   * CALL OWNER
-   */
-
+  /* CALL OWNER */
   const handleCall = () => {
     if (!item?.owner_phone) {
-      Alert.alert(
-        "شماره تماس موجود نیست",
-        "این آگهی شماره تماس ندارد."
-      );
-
+      Alert.alert("شماره تماس موجود نیست", "این آگهی شماره تماس ندارد.");
       return;
     }
 
-    Linking.openURL(
-      `tel:${item.owner_phone}`
-    ).catch(() =>
-      Alert.alert(
-        "خطا",
-        "امکان برقراری تماس وجود ندارد."
-      )
+    Linking.openURL(`tel:${item.owner_phone}`).catch(() =>
+      Alert.alert("خطا", "امکان برقراری تماس وجود ندارد.")
     );
   };
 
-  /*
-   * MESSAGE OWNER
-   */
-
+  /* MESSAGE OWNER */
   const handleMessage = async () => {
     if (!user) {
       router.push("/profile");
@@ -397,55 +848,33 @@ export default function VideoReelCard({
     }
 
     try {
-      const conversation =
-        await startConversation(
-          item.id,
-          token
-        );
-
-      router.push(
-        `/chat/${conversation.id}`
-      );
+      const conversation = await startConversation(item.id, token);
+      router.push(`/chat/${conversation.id}`);
     } catch (err: any) {
-      Alert.alert(
-        "خطا",
-        err.message
-      );
+      Alert.alert("خطا", err.message);
     }
   };
 
-  /*
-   * SHARE
-   */
-
+  /* SHARE */
   const handleShare = () => {
     Share.share({
-      message: `${item.title}\n${item.price}\n${
-        item.location || ""
-      }`,
+      message: `${item.title}\n${item.price}\n${item.location || ""}`,
     }).catch(() => {});
   };
 
-  /*
-   * PROPERTY DETAILS
-   */
-
+  /* PROPERTY DETAILS */
   const handlePropertyPress = () => {
-    // Change this route if your listing details
-    // screen uses another route.
+    // Change this route if your listing details screen uses another route.
     router.push(`/listing/${item.id}`);
   };
 
-  const isOwnListing =
-    user && item.owner === user.id;
+  const hasDescription = !!(item.description || "").trim();
+
+  const isOwnListing = user && item.owner === user.id;
 
   return (
     <View style={styles.container}>
-
-      {/* =====================================================
-          VIDEO
-      ===================================================== */}
-
+      {/* VIDEO */}
       <VideoView
         style={StyleSheet.absoluteFill}
         player={player}
@@ -453,24 +882,22 @@ export default function VideoReelCard({
         nativeControls={false}
       />
 
-      {/* =====================================================
-          VIDEO TOUCH AREA
-      ===================================================== */}
+      {/* TAP AREA */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={handleVideoPress} />
 
-      <Pressable
-        style={StyleSheet.absoluteFill}
-        onPress={handleVideoPress}
-      />
+      {/* DIM LAYER while the caption is open (tap to close) */}
+      {showDescription && (
+        <Pressable
+          style={styles.captionDim}
+          onPress={() => setShowDescription(false)}
+        />
+      )}
 
-      {/* =====================================================
-          DOUBLE TAP HEART
-      ===================================================== */}
-
+      {/* DOUBLE TAP HEART */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.bigHeart,
-
           {
             transform: [
               {
@@ -480,94 +907,46 @@ export default function VideoReelCard({
                 }),
               },
             ],
-
             opacity: heartScale,
           },
         ]}
       >
-        <Ionicons
-          name="heart"
-          size={105}
-          color="#fff"
-        />
+        <Ionicons name="heart" size={105} color="#fff" />
       </Animated.View>
 
-      {/* =====================================================
-          TOP BAR
-      ===================================================== */}
+      {/* TOP FADE (keeps the logo readable on bright videos) */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={["rgba(0,0,0,0.5)", "rgba(0,0,0,0)"]}
+        style={[styles.topFade, { height: insets.top + 90 }]}
+      />
 
-      <View style={styles.topBar}>
-
-        <Text style={styles.logo}>
-          Azdoor
-        </Text>
+      {/* TOP BAR */}
+      <View style={[styles.topBar, { top: insets.top + 8 }]}>
+        <Text style={styles.logo}>{APP_NAME}</Text>
 
         <TouchableOpacity
-          style={styles.moreButton}
+          style={styles.iconCircle}
           activeOpacity={0.7}
-          onPress={() =>
-            Alert.alert(
-              "گزینه‌ها",
-              "گزینه‌های بیشتر به‌زودی اضافه می‌شوند."
-            )
-          }
+          onPress={toggleMute}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
           <Ionicons
-            name="ellipsis-horizontal"
-            size={24}
+            name={muted ? "volume-mute" : "volume-high"}
+            size={20}
             color="#fff"
           />
         </TouchableOpacity>
-
       </View>
 
-      {/* =====================================================
-          MUTE INDICATOR
-      ===================================================== */}
-
-      <View style={styles.muteContainer}>
-        <View style={styles.muteBadge}>
-
-          <Ionicons
-            name={
-              muted
-                ? "volume-mute"
-                : "volume-high"
-            }
-            size={17}
-            color="#fff"
-          />
-
-        </View>
-      </View>
-
-      {/* =====================================================
-          RIGHT ACTION RAIL
-          INSTAGRAM STYLE
-      ===================================================== */}
-
+      {/* ACTION RAIL */}
       <View style={styles.actionRail}>
-
-        {/* LIKE / SAVE */}
-
         <ActionButton
-          icon={
-            favorited
-              ? "heart"
-              : "heart-outline"
-          }
-          label={
-            favorited
-              ? "ذخیره شد"
-              : "ذخیره"
-          }
+          icon={favorited ? "heart" : "heart-outline"}
+          label={favorited ? "ذخیره شد" : "ذخیره"}
           active={favorited}
-          onPress={() =>
-            handleFavorite(false)
-          }
+          onPress={() => handleFavorite(false)}
         />
-
-        {/* MESSAGE */}
 
         {!isOwnListing && (
           <ActionButton
@@ -577,30 +956,18 @@ export default function VideoReelCard({
           />
         )}
 
-        {/* CALL */}
-
         {!isOwnListing && (
-          <ActionButton
-            icon="call-outline"
-            label="تماس"
-            onPress={handleCall}
-          />
+          <ActionButton icon="call-outline" label="تماس" onPress={handleCall} />
         )}
-
-        {/* SHARE */}
 
         <ActionButton
           icon="paper-plane-outline"
           label="اشتراک"
           onPress={handleShare}
         />
-
       </View>
 
-      {/* =====================================================
-          BOTTOM GRADIENT
-      ===================================================== */}
-
+      {/* BOTTOM INFO */}
       <LinearGradient
         colors={[
           "transparent",
@@ -611,198 +978,104 @@ export default function VideoReelCard({
         style={styles.bottomGradient}
         pointerEvents="box-none"
       >
-
         <View style={styles.bottomContent}>
-
-          {/* =================================================
-              OWNER
-          ================================================= */}
-
+          {/* OWNER (clean row) */}
           {!!item.owner_name && (
             <View style={styles.ownerRow}>
-
-              {/* AVATAR */}
-
               <View style={styles.ownerAvatar}>
-
                 <Text style={styles.avatarText}>
-                  {item.owner_name
-                    .trim()
-                    .charAt(0)}
+                  {item.owner_name.trim().charAt(0)}
                 </Text>
-
               </View>
 
-              {/* OWNER INFORMATION */}
-
-              <View style={styles.ownerInfo}>
-
-                <View
-                  style={styles.ownerNameRow}
-                >
-
-                  <Text
-                    style={styles.ownerName}
-                    numberOfLines={1}
-                  >
-                    {item.owner_name}
-                  </Text>
-
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={15}
-                    color="#3797f0"
-                  />
-
-                </View>
-
-                <Text
-                  style={styles.ownerSubtitle}
-                >
-                  صاحب آگهی
-                </Text>
-
-              </View>
-
-              {/* MESSAGE BUTTON */}
+              <Text style={styles.ownerName} numberOfLines={1}>
+                {item.owner_name}
+              </Text>
 
               {!isOwnListing && (
                 <TouchableOpacity
-                  style={styles.followButton}
+                  style={styles.messageButton}
                   activeOpacity={0.8}
                   onPress={handleMessage}
                 >
-                  <Text
-                    style={styles.followText}
-                  >
-                    پیام
-                  </Text>
+                  <Text style={styles.messageText}>پیام</Text>
                 </TouchableOpacity>
               )}
-
             </View>
           )}
 
-          {/* =================================================
-              DEAL TYPE
-          ================================================= */}
-
-          {!!item.deal_type_display && (
-            <View style={styles.dealBadge}>
-
-              <Text
-                style={styles.dealBadgeText}
-              >
-                {item.deal_type_display}
-              </Text>
-
-            </View>
-          )}
-
-          {/* =================================================
-              TITLE
-          ================================================= */}
-
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handlePropertyPress}
-          >
-
-            <Text
-              style={styles.title}
-              numberOfLines={2}
-            >
+          {/* TITLE */}
+          <TouchableOpacity activeOpacity={0.9} onPress={handlePropertyPress}>
+            <Text style={styles.title} numberOfLines={2}>
               {item.title}
             </Text>
-
           </TouchableOpacity>
 
-          {/* =================================================
-              PRICE
-          ================================================= */}
-
-          {!!item.price && (
-            <View style={styles.priceRow}>
-
-              <Ionicons
-                name="pricetag"
-                size={14}
-                color="#fff"
-              />
-
-              <Text style={styles.price}>
-                {item.price}
-              </Text>
-
+          {/* DEAL TYPE + PRICE */}
+          {(!!item.deal_type_display || !!item.price) && (
+            <View style={styles.metaRow}>
+              {!!item.deal_type_display && (
+                <View style={styles.dealBadge}>
+                  <Text style={styles.dealBadgeText}>
+                    {item.deal_type_display}
+                  </Text>
+                </View>
+              )}
+              {!!item.price && <Text style={styles.price}>{item.price}</Text>}
             </View>
           )}
 
-          {/* =================================================
-              LOCATION
-          ================================================= */}
-
+          {/* LOCATION */}
           {!!item.location && (
             <View style={styles.locationRow}>
-
               <Ionicons
                 name="location-sharp"
                 size={14}
                 color="rgba(255,255,255,0.8)"
               />
-
-              <Text
-                style={styles.location}
-                numberOfLines={1}
-              >
+              <Text style={styles.location} numberOfLines={1}>
                 {item.location}
               </Text>
-
             </View>
           )}
 
-          {/* =================================================
-              DESCRIPTION
-          ================================================= */}
-
-          {!!item.description && (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() =>
-                setShowDescription(
-                  !showDescription
-                )
-              }
-            >
-
-              <Text
-                style={styles.description}
-                numberOfLines={
-                  showDescription ? 4 : 1
-                }
+          {/* DESCRIPTION: hidden until the user taps "بیشتر" */}
+          {hasDescription &&
+            (showDescription ? (
+              <View style={styles.captionWrap}>
+                <ScrollView
+                  style={styles.captionScroll}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator={false}
+                >
+                  <Text style={styles.caption}>{item.description}</Text>
+                </ScrollView>
+                <TouchableOpacity
+                  style={styles.moreButton}
+                  activeOpacity={0.7}
+                  onPress={() => setShowDescription(false)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}
+                >
+                  <Text style={styles.captionMore}>کمتر</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.moreButton}
+                activeOpacity={0.7}
+                onPress={() => setShowDescription(true)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}
               >
-                {item.description}
-              </Text>
-
-              <Text style={styles.moreText}>
-                {showDescription
-                  ? "کمتر"
-                  : "بیشتر"}
-              </Text>
-
-            </TouchableOpacity>
-          )}
-
+                <Text style={styles.captionMore}>بیشتر</Text>
+              </TouchableOpacity>
+            ))}
         </View>
-
       </LinearGradient>
-
     </View>
   );
 }
 
-/* =========================================================
-   ACTION BUTTON
-========================================================= */
+/* ACTION BUTTON */
 
 function ActionButton({
   icon,
@@ -821,443 +1094,217 @@ function ActionButton({
       onPress={onPress}
       activeOpacity={0.7}
     >
-
       <View style={styles.actionIcon}>
-
         <Ionicons
           name={icon}
-          size={28}
-          color={
-            active
-              ? "#ff3040"
-              : "#fff"
-          }
+          size={25}
+          color={active ? "#ff3040" : "#fff"}
         />
-
       </View>
-
-      <Text style={styles.actionLabel}>
-        {label}
-      </Text>
-
+      <Text style={styles.actionLabel}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-/* =========================================================
-   STYLES
-========================================================= */
+/* STYLES */
 
 const styles = StyleSheet.create({
-
-  /* =====================================================
-     CONTAINER
-  ===================================================== */
-
   container: {
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
     backgroundColor: "#000",
   },
 
-  /* =====================================================
-     TOP
-  ===================================================== */
-
+  /* Top */
+  topFade: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 15,
+  },
   topBar: {
     position: "absolute",
-
-    top: 48,
     left: 16,
     right: 16,
-
     flexDirection: "row",
-
     alignItems: "center",
     justifyContent: "space-between",
-
     zIndex: 20,
   },
-
   logo: {
     color: "#fff",
-
-    fontSize: 23,
+    fontSize: 22,
     fontWeight: "800",
-
-    letterSpacing: -0.8,
-
-    textShadowColor:
-      "rgba(0,0,0,0.4)",
-
+    textShadowColor: "rgba(0,0,0,0.4)",
     textShadowRadius: 5,
   },
-
-  moreButton: {
-    width: 40,
-    height: 40,
-
-    borderRadius: 20,
-
-    backgroundColor:
-      "rgba(0,0,0,0.30)",
-
+  iconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(0,0,0,0.35)",
     justifyContent: "center",
     alignItems: "center",
   },
 
-  /* =====================================================
-     MUTE
-  ===================================================== */
-
-  muteContainer: {
-    position: "absolute",
-
-    top: 105,
-    right: 15,
-
-    zIndex: 20,
-  },
-
-  muteBadge: {
-    width: 36,
-    height: 36,
-
-    borderRadius: 18,
-
-    backgroundColor:
-      "rgba(0,0,0,0.45)",
-
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  /* =====================================================
-     HEART ANIMATION
-  ===================================================== */
-
+  /* Heart */
   bigHeart: {
     position: "absolute",
-
-    top:
-      SCREEN_HEIGHT / 2 - 52,
-
-    left:
-      SCREEN_WIDTH / 2 - 52,
-
+    top: SCREEN_HEIGHT / 2 - 52,
+    left: SCREEN_WIDTH / 2 - 52,
     zIndex: 30,
-
     shadowColor: "#000",
     shadowOpacity: 0.35,
     shadowRadius: 10,
   },
 
-  /* =====================================================
-     RIGHT ACTIONS
-  ===================================================== */
-
+  /* Action rail */
   actionRail: {
     position: "absolute",
-
-    right: 10,
-    bottom: 175,
-
+    left: 10,
+    bottom: 205,
     alignItems: "center",
-
-    gap: 18,
-
+    gap: 16,
     zIndex: 20,
   },
-
   actionButton: {
     alignItems: "center",
     justifyContent: "center",
-
     minWidth: 52,
   },
-
   actionIcon: {
-    width: 48,
-    height: 48,
-
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "rgba(0,0,0,0.28)",
     justifyContent: "center",
     alignItems: "center",
   },
-
   actionLabel: {
     color: "#fff",
-
     fontSize: 10.5,
     fontWeight: "600",
-
-    marginTop: 1,
-
-    textShadowColor:
-      "rgba(0,0,0,0.7)",
-
+    marginTop: 4,
+    textShadowColor: "rgba(0,0,0,0.7)",
     textShadowRadius: 4,
   },
 
-  /* =====================================================
-     BOTTOM GRADIENT
-  ===================================================== */
-
+  /* Bottom */
   bottomGradient: {
     position: "absolute",
-
     left: 0,
     right: 0,
     bottom: 0,
-
-    minHeight: 370,
-
+    minHeight: 330,
     justifyContent: "flex-end",
-
     zIndex: 10,
   },
-
-  /* =====================================================
-     CONTENT
-  ===================================================== */
-
   bottomContent: {
     paddingHorizontal: 16,
-
     paddingBottom: 40,
-
-    /*
-     * Leave space on the right
-     * for Instagram-style actions.
-     */
-
-    paddingRight: 78,
-
+    // Leave space on the left for the action buttons.
+    paddingLeft: 78,
     alignItems: "flex-start",
   },
 
-  /* =====================================================
-     OWNER
-  ===================================================== */
-
+  /* Owner (clean row, Instagram style) */
   ownerRow: {
     flexDirection: "row",
-
     alignItems: "center",
-
-    width: "100%",
-
+    gap: 10,
+    maxWidth: "100%",
     marginBottom: 12,
   },
-
   ownerAvatar: {
-    width: 43,
-    height: 43,
-
-    borderRadius: 22,
-
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#00a884",
-
     justifyContent: "center",
     alignItems: "center",
-
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "#fff",
-
-    marginRight: 9,
   },
-
-  avatarText: {
-    color: "#fff",
-
-    fontSize: 16,
-    fontWeight: "800",
-  },
-
-  ownerInfo: {
-    flex: 1,
-
-    alignItems: "flex-start",
-  },
-
-  ownerNameRow: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    gap: 4,
-  },
-
+  avatarText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   ownerName: {
     color: "#fff",
-
-    fontSize: 14,
-    fontWeight: "800",
-
-    maxWidth: 150,
-
-    textShadowColor:
-      "rgba(0,0,0,0.5)",
-
+    fontSize: 14.5,
+    fontWeight: "700",
+    flexShrink: 1,
+    textShadowColor: "rgba(0,0,0,0.5)",
     textShadowRadius: 4,
   },
-
-  ownerSubtitle: {
-    color:
-      "rgba(255,255,255,0.72)",
-
-    fontSize: 10.5,
-
-    marginTop: 1,
-  },
-
-  /* =====================================================
-     MESSAGE BUTTON
-  ===================================================== */
-
-  followButton: {
-    paddingHorizontal: 13,
-    paddingVertical: 6,
-
-    borderRadius: 6,
-
+  messageButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 8,
     borderWidth: 1,
-
-    borderColor:
-      "rgba(255,255,255,0.85)",
+    borderColor: "rgba(255,255,255,0.85)",
   },
+  messageText: { color: "#fff", fontSize: 12, fontWeight: "700" },
 
-  followText: {
-    color: "#fff",
-
-    fontSize: 11,
-
-    fontWeight: "700",
-  },
-
-  /* =====================================================
-     DEAL
-  ===================================================== */
-
-  dealBadge: {
-    alignSelf: "flex-start",
-
-    backgroundColor: "#00a884",
-
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-
-    borderRadius: 5,
-
-    marginBottom: 7,
-  },
-
-  dealBadgeText: {
-    color: "#fff",
-
-    fontSize: 11,
-
-    fontWeight: "700",
-  },
-
-  /* =====================================================
-     TITLE
-  ===================================================== */
-
+  /* Title, deal + price, location */
   title: {
     color: "#fff",
-
     fontSize: 17,
-
-    lineHeight: 22,
-
-    fontWeight: "800",
-
-    marginBottom: 7,
-
-    textAlign: "left",
-
-    textShadowColor:
-      "rgba(0,0,0,0.7)",
-
+    lineHeight: 24,
+    fontWeight: "700",
+    marginBottom: 8,
+    textShadowColor: "rgba(0,0,0,0.7)",
     textShadowRadius: 5,
   },
-
-  /* =====================================================
-     PRICE
-  ===================================================== */
-
-  priceRow: {
+  metaRow: {
     flexDirection: "row",
-
     alignItems: "center",
-
-    marginBottom: 5,
-
-    gap: 5,
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 8,
   },
-
+  dealBadge: {
+    backgroundColor: "#00a884",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  dealBadgeText: { color: "#fff", fontSize: 11.5, fontWeight: "700" },
   price: {
     color: "#fff",
-
-    fontSize: 15,
-
+    fontSize: 16,
     fontWeight: "800",
-
-    textShadowColor:
-      "rgba(0,0,0,0.6)",
-
+    textShadowColor: "rgba(0,0,0,0.6)",
     textShadowRadius: 4,
   },
-
-  /* =====================================================
-     LOCATION
-  ===================================================== */
-
   locationRow: {
     flexDirection: "row",
-
     alignItems: "center",
-
-    marginBottom: 5,
-
     gap: 4,
   },
-
   location: {
-    color:
-      "rgba(255,255,255,0.82)",
-
-    fontSize: 12,
-
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12.5,
     flexShrink: 1,
   },
 
-  /* =====================================================
-     DESCRIPTION
-  ===================================================== */
-
-  description: {
-    color:
-      "rgba(255,255,255,0.82)",
-
-    fontSize: 12,
-
-    lineHeight: 17,
-
-    marginTop: 3,
-
-    maxWidth:
-      SCREEN_WIDTH - 110,
+  /* Description ("بیشتر" -> full text) */
+  captionDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    zIndex: 5,
   },
-
-  moreText: {
-    color: "#fff",
-
-    fontSize: 11,
-
-    fontWeight: "700",
-
-    marginTop: 2,
+  captionWrap: { width: "100%", marginTop: 10 },
+  caption: {
+    color: "rgba(255,255,255,0.95)",
+    fontSize: 14,
+    lineHeight: 22,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowRadius: 3,
   },
-
+  captionScroll: { maxHeight: 150 },
+  moreButton: { marginTop: 10, alignSelf: "flex-start" },
+  captionMore: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 13,
+    fontWeight: "600",
+  },
 });
