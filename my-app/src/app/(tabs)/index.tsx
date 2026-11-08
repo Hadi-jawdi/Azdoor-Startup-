@@ -54,6 +54,7 @@ export default function Home() {
   const [activeDealType, setActiveDealType] = useState<string | null>(null);
   const [activePropertyType, setActivePropertyType] = useState<string | null>(null);
   const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const searchTimer = useRef<any>(null);
 
   const load = async (opts?: {
@@ -241,21 +242,31 @@ export default function Home() {
         <Text style={styles.heroSubtitle}>چه چیزی امروز نیاز داری؟</Text> */}
 
         {/* Search */}
-        <View style={styles.searchCard}>
-          <View style={styles.searchIconCircle}>
-            <Ionicons name="search" size={16} color="#00a884" />
-          </View>
+        <View style={[styles.searchCard, searchFocused && styles.searchCardFocused]}>
+          <Ionicons
+            name="search"
+            size={20}
+            color={searchFocused ? "#00a884" : "#9aa0a8"}
+          />
           <TextInput
             style={styles.searchInput}
             value={search}
             onChangeText={onChangeSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
             placeholder={searchPlaceholder}
-            placeholderTextColor="#b6b9bf"
+            placeholderTextColor="#a3a8b0"
             returnKeyType="search"
+            textAlign="right"
+            selectionColor="#00a884"
           />
           {search.length > 0 && (
-            <TouchableOpacity style={styles.clearButton} onPress={clearSearch}>
-              <Ionicons name="close" size={13} color="#9a9ea6" />
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={clearSearch}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={14} color="#6b7280" />
             </TouchableOpacity>
           )}
         </View>
@@ -387,27 +398,37 @@ const styles = StyleSheet.create({
   searchCard: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 10,
+    height: 52,
     backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    elevation: 4,
+    borderRadius: 14,
+    paddingHorizontal: 15,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    elevation: 3,
     shadowColor: "#00302a",
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
     marginBottom: 10,
   },
-  searchIconCircle: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: "#e1f5ee",
-    justifyContent: "center", alignItems: "center",
-    marginRight: 8,
+  searchCardFocused: {
+    borderColor: "#7fdcc3",
   },
-  searchInput: { flex: 1, paddingVertical: 12, fontSize: 14.5, color: "#1a1a1a" },
+  searchInput: {
+    flex: 1,
+    height: "100%",
+    paddingVertical: 0,
+    fontSize: 14.5,
+    color: "#1a1a1a",
+  },
   clearButton: {
-    width: 22, height: 22, borderRadius: 11, backgroundColor: "#f4f5f7",
-    justifyContent: "center", alignItems: "center", marginLeft: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#eef0f2",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   citySelector: {
