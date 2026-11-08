@@ -32,8 +32,12 @@ export function getListings({ categoryId, cityId, search, dealType, propertyType
   return apiRequest(`/listings/${query}`);
 }
 
-export function getListing(id) {
-  return apiRequest(`/listings/${id}/`);
+// export function getListing(id) {
+//   return apiRequest(`/listings/${id}/`);
+// }
+
+export function getListing(id, token) {
+  return apiRequest(`/listings/${id}/`, { token });
 }
 
 export async function createListing(
@@ -123,6 +127,9 @@ export function getFavorites(token) {
   return apiRequest(`/listings/favorites/`, { token });
 }
 
-export function getVideoListings() {
-  return apiRequest(`/listings/?has_video=true`);
+// export function getVideoListings() {
+//   return apiRequest(`/listings/?has_video=true`);
+// }
+export function getVideoListings(token) {
+  return apiRequest(`/listings/?has_video=true`, { token });
 }

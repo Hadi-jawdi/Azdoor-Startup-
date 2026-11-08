@@ -12,6 +12,7 @@ import {
   Pressable,
   Animated,
   ScrollView,
+  Image,
 } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { router } from "expo-router";
@@ -22,6 +23,10 @@ import { useAuth } from "../context/AuthContext";
 import { toggleFavorite } from "../utils/listings";
 import { startConversation } from "../utils/chat";
 
+
+// 
+import FollowButton from "./FollowButton";
+// 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const APP_NAME = "ازدور";
@@ -31,14 +36,25 @@ const PREVIEW_WORDS = 1; // words of the description shown before "more"
 // remembered for the next reels (shared by all cards).
 let GLOBAL_MUTED = false;
 
+// export default function VideoReelCard({
+//   item,
+//   isActive,
+//   onToggleFavorite,
+// }: {
+//   item: any;
+//   isActive: boolean;
+//   onToggleFavorite?: (id: number, favorited: boolean) => void;
+// }) {
 export default function VideoReelCard({
   item,
   isActive,
   onToggleFavorite,
+  onFollowChange,
 }: {
   item: any;
   isActive: boolean;
   onToggleFavorite?: (id: number, favorited: boolean) => void;
+  onFollowChange?: (ownerId: number, isFollowing: boolean) => void;
 }) {
   const { user, token } = useAuth();
   const insets = useSafeAreaInsets();
@@ -316,7 +332,7 @@ export default function VideoReelCard({
         pointerEvents="box-none"
       >
         <View style={styles.bottomContent}>
-          {/* OWNER */}
+          OWNER
           {!!item.owner_name && (
             <View style={styles.ownerRow}>
               <View style={styles.ownerAvatar}>
@@ -579,6 +595,19 @@ const styles = StyleSheet.create({
     marginEnd: 10,
   },
   avatarText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+
+  // 
+  ownerMain: { flex: 1, flexDirection: "row", alignItems: "center", marginEnd: 8 },
+  ownerAvatarImg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.9)",
+    marginEnd: 10,
+  },
+
+  // 
   ownerInfo: { flex: 1, alignItems: "flex-start", marginEnd: 8 },
   ownerName: {
     color: "#fff",

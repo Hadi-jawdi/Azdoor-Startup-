@@ -19,6 +19,9 @@ import { getListing } from "../../utils/listings";
 import { useAuth } from "../../context/AuthContext";
 import { startConversation } from "../../utils/chat";
 
+// 
+import FollowButton from "../../components/FollowButton";
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_HEIGHT = SCREEN_WIDTH * 0.85;
 
@@ -53,12 +56,20 @@ export default function ListingDetail() {
    }
  };
 
+  // useEffect(() => {
+  //   getListing(id as string)
+  //     .then(setItem)
+  //     .catch((err) => setError(err.message))
+  //     .finally(() => setLoading(false));
+  // }, [id]);
   useEffect(() => {
-    getListing(id as string)
+    getListing(id as string, token)
       .then(setItem)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, token]);
+
+  // 
 
   if (loading) {
     return (
@@ -169,7 +180,7 @@ export default function ListingDetail() {
             {item.description || "توضیحاتی برای این اعلان ثبت نشده است."}
           </Text>
 
-          {item.owner_name ? (
+          {/* {item.owner_name ? (
             <View style={styles.ownerRow}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{item.owner_name.charAt(0)}</Text>
@@ -178,6 +189,47 @@ export default function ListingDetail() {
                 <Text style={styles.ownerLabel}>ثبت شده توسط</Text>
                 <Text style={styles.ownerName}>{item.owner_name}</Text>
               </View>
+            </View>
+          ) : null} */}
+                  {item.owner ? (
+            <View style={styles.ownerRow}>
+              {/* tap the seller to open their profile */}
+              <TouchableOpacity
+                style={styles.ownerMain}
+                activeOpacity={0.7}
+                onPress={() => router.push(`/user/${item.owner}`)}
+              >
+                {item.owner_avatar ? (
+                  <Image source={{ uri: item.owner_avatar }} style={styles.avatarImg} />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {(item.owner_name || "A").charAt(0)}
+                    </Text>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.ownerLabel}>ثبت شده توسط</Text>
+                  <Text style={styles.ownerName} numberOfLines={1}>
+                    {item.owner_name || "کاربر Azdoor"}
+                  </Text>
+                  {item.owner_account_type === "agent" && (
+                    <Text style={styles.ownerAgent}>
+                      مشاور املاک
+                      {item.owner_agency_name ? ` • ${item.owner_agency_name}` : ""}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* no follow button on your own listing */}
+              {user?.id !== item.owner && (
+                <FollowButton
+                  userId={item.owner}
+                  initialFollowing={!!item.owner_is_following}
+                  compact
+                />
+              )}
             </View>
           ) : null}
         </View>
@@ -304,6 +356,9 @@ const styles = StyleSheet.create({
   avatarText: { color: "#0f6e56", fontWeight: "700", fontSize: 16 },
   ownerLabel: { fontSize: 11.5, color: "#9a9ea6" },
   ownerName: { fontSize: 14, fontWeight: "600", color: "#1a1a1a" },
+  ownerMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
+  avatarImg: { width: 40, height: 40, borderRadius: 20 },
+  ownerAgent: { fontSize: 11.5, color: "#00a884", marginTop: 2 },
 
   contactBar: {
     position: "absolute",

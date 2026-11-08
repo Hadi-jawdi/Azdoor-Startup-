@@ -1,8 +1,6 @@
-
-
+from accounts.models import Follow
 from rest_framework import serializers
 from .models import Listing, ListingImage, Favorite
-
 
 class ListingImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,6 +11,15 @@ class ListingImageSerializer(serializers.ModelSerializer):
 class ListingSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source="owner.full_name", read_only=True)
     owner_phone = serializers.CharField(source="owner.phone", read_only=True)
+    ###
+    owner_account_type = serializers.CharField(source="owner.account_type", read_only=True)
+    owner_agency_name = serializers.CharField(source="owner.agency_name", read_only=True)
+    owner_avatar = serializers.SerializerMethodField()
+    ###
+    ##
+    owner_avatar = serializers.SerializerMethodField()
+    owner_is_following = serializers.SerializerMethodField()
+    ##
     category_display = serializers.CharField(source="get_category_display", read_only=True)
     deal_type_display = serializers.CharField(source="get_deal_type_display", read_only=True)
     property_type_display = serializers.CharField(source="get_property_type_display", read_only=True)
@@ -31,7 +38,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "deal_type", "deal_type_display", "property_type", "property_type_display",
             "employment_type", "employment_type_display",
             "description", "created_at",
-            "owner", "owner_name", "owner_phone", "images", "uploaded_images", "is_favorited","video",
+            "owner", "owner_name", "owner_phone", "owner_account_type", "owner_agency_name", "owner_avatar","owner_is_following", "images", "uploaded_images", "is_favorited","video",
         ]
         read_only_fields = ["owner"]
 
@@ -40,6 +47,24 @@ class ListingSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             return False
         return obj.favorited_by.filter(user=request.user).exists()
+
+
+    def get_owner_avatar(self, obj):
+        avatar = obj.owner.avatar
+        if not avatar:
+            return None
+        request = self.context.get("request")
+        return request.build_absolute_uri(avatar.url) if request else avatar.url
+    ##
+    def get_owner_is_following(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return Follow.objects.filter(
+            follower=request.user, following=obj.owner
+        ).exists()
+
+    
 
     def validate(self, data):
         category = data.get("category", getattr(self.instance, "category", None))

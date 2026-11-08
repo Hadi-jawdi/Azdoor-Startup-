@@ -1,6 +1,7 @@
 
 
-import { useState } from "react";
+// import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -10,15 +11,27 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+//   ActivityIndicator,
+// } from "react-native";
+// import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
-
+import { getProfile } from "../../utils/profiles";
 export default function Profile() {
+  // const {
+  //   user,
+  //   loading,
+  //   login,
+  //   register,
+  //   logout,
+  // } = useAuth();
   const {
     user,
+    token,
     loading,
     login,
     register,
@@ -40,6 +53,24 @@ export default function Profile() {
 
   const [submitting, setSubmitting] =
     useState(false);
+  const [me, setMe] = useState<any>(null);
+
+  // reload whenever this tab is focused (e.g. after editing the profile)
+  useFocusEffect(
+    useCallback(() => {
+      if (!user || !token) {
+        setMe(null);
+        return;
+      }
+      let active = true;
+      getProfile(user.id, token)
+        .then((p) => active && setMe(p))
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, [user?.id, token])
+  );
 
   if (loading) {
     return (
@@ -131,8 +162,24 @@ export default function Profile() {
 
             <View style={styles.profileInfo}>
               {/* AVATAR */}
+                          <View style={styles.avatarLarge}>
+                {me?.avatar ? (
+                  <Image
+                    source={{ uri: me.avatar }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <Text style={styles.avatarLargeText}>
+                    {avatarLetter}
+                  </Text>
+                )}
 
-              <View style={styles.avatarLarge}>
+                <View
+                  style={styles.onlineDot}
+                />
+              </View>
+
+              {/* <View style={styles.avatarLarge}>
                 <Text style={styles.avatarLargeText}>
                   {avatarLetter}
                 </Text>
@@ -140,7 +187,7 @@ export default function Profile() {
                 <View
                   style={styles.onlineDot}
                 />
-              </View>
+              </View> */}
 
               {/* NAME */}
 
@@ -149,22 +196,47 @@ export default function Profile() {
               </Text>
 
               {/* PHONE */}
+            
 
-              <Text style={styles.profilePhone}>
+              {/* <Text style={styles.profilePhone}>
+                {user.phone}
+              </Text> */}
+            
+                          <Text style={styles.profilePhone}>
                 {user.phone}
               </Text>
+
+              {me?.account_type === "agent" && (
+                <View style={styles.agentBadge}>
+                  <Ionicons
+                    name="briefcase-outline"
+                    size={12}
+                    color="#00a884"
+                  />
+                  <Text style={styles.agentBadgeText}>
+                    مشاور املاک
+                    {me.agency_name ? ` • ${me.agency_name}` : ""}
+                  </Text>
+                </View>
+              )}
+
+              {!!me?.bio && (
+                <Text style={styles.profileBio}>{me.bio}</Text>
+              )}
+
 
               {/* EDIT BUTTON */}
 
               <TouchableOpacity
                 style={styles.editProfileButton}
                 activeOpacity={0.8}
-                onPress={() =>
-                  Alert.alert(
-                    "ویرایش پروفایل",
-                    "ویرایش پروفایل به‌زودی اضافه می‌شود."
-                  )
-                }
+                onPress={() => router.push("/edit-profile")}
+                // onPress={() =>
+                //   Alert.alert(
+                //     "ویرایش پروفایل",
+                //     "ویرایش پروفایل به‌زودی اضافه می‌شود."
+                //   )
+                // }
               >
                 <Ionicons
                   name="create-outline"
@@ -184,7 +256,7 @@ export default function Profile() {
             {/* STATS */}
             {/* ========================================= */}
 
-            <View style={styles.statsCard}>
+            {/* <View style={styles.statsCard}>
               <StatItem
                 value="0"
                 label="آگهی"
@@ -203,10 +275,38 @@ export default function Profile() {
                 value="0"
                 label="بازدید"
               />
+            </View> */}
+                      <View style={styles.statsCard}>
+              <StatItem
+                value={me?.listings_count ?? 0}
+                label="آگهی"
+                onPress={() => router.push("/my-listings")}
+              />
+
+              <View style={styles.statDivider} />
+
+              <StatItem
+                value={me?.followers_count ?? 0}
+                label="دنبال‌کننده"
+                onPress={() =>
+                  router.push(`/user-list?id=${user.id}&type=followers`)
+                }
+              />
+
+              <View style={styles.statDivider} />
+
+              <StatItem
+                value={me?.following_count ?? 0}
+                label="دنبال‌شده"
+                onPress={() =>
+                  router.push(`/user-list?id=${user.id}&type=following`)
+                }
+              />
             </View>
           </View>
 
-          {/* ========================================= */}
+          {/* ==================
+          ======================= */}
           {/* MY ACTIVITY */}
           {/* ========================================= */}
 
@@ -248,6 +348,14 @@ export default function Profile() {
   subtitle="آگهی‌هایی که ذخیره کرده‌اید"
   onPress={() => router.push("/favorites")}
 />
+            <MenuCard
+              icon="person-circle-outline"
+              iconBackground="#eef4ff"
+              iconColor="#3478f6"
+              title="پروفایل عمومی من"
+              subtitle="صفحه‌ای که دیگران می‌بینند و دنبال می‌کنند"
+              onPress={() => router.push(`/user/${user.id}`)}
+            />
           </View>
 
           {/* ========================================= */}
@@ -654,15 +762,46 @@ export default function Profile() {
  * =====================================================
  */
 
+// function StatItem({
+//   value,
+//   label,
+// }: {
+//   value: string;
+//   label: string;
+// }) {
+//   return (
+//     <View style={styles.statItem}>
+//       <Text style={styles.statValue}>
+//         {value}
+//       </Text>
+
+//       <Text style={styles.statLabel}>
+//         {label}
+//       </Text>
+//     </View>
+//   );
+// }
+
+
+
+
+
 function StatItem({
   value,
   label,
+  onPress,
 }: {
-  value: string;
+  value: number | string;
   label: string;
+  onPress?: () => void;
 }) {
   return (
-    <View style={styles.statItem}>
+    <TouchableOpacity
+      style={styles.statItem}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={0.7}
+    >
       <Text style={styles.statValue}>
         {value}
       </Text>
@@ -670,7 +809,7 @@ function StatItem({
       <Text style={styles.statLabel}>
         {label}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -849,6 +988,37 @@ const styles = StyleSheet.create({
     fontWeight: "800",
 
     marginTop: 11,
+  },
+  avatarImage: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+  },
+
+  agentBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#e8f7f2",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginTop: 8,
+  },
+
+  agentBadgeText: {
+    color: "#00a884",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  profileBio: {
+    color: "#4a4f57",
+    fontSize: 13.5,
+    lineHeight: 21,
+    textAlign: "center",
+    marginTop: 10,
+    paddingHorizontal: 12,
   },
 
   profilePhone: {

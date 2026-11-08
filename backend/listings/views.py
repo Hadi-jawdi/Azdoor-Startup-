@@ -102,3 +102,13 @@ class FavoriteListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Listing.objects.filter(favorited_by__user=self.request.user).order_by("-favorited_by__created_at")
+
+
+###
+class UserListingsView(generics.ListAPIView):
+    """All listings posted by one user (shown on their profile)."""
+    serializer_class = ListingSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return Listing.objects.filter(owner_id=self.kwargs["pk"])
